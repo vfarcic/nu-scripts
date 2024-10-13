@@ -2,6 +2,8 @@
 
 def --env create_kubernetes [hyperscaler: string, min_nodes: int, max_nodes: int] {
 
+    rm --force kubeconfig.yaml
+
     $env.KUBECONFIG = $"($env.PWD)/kubeconfig.yaml"
     $"export KUBECONFIG=($env.KUBECONFIG)\n" | save --append .env
 
@@ -153,6 +155,10 @@ def destroy_kubernetes [hyperscaler: string] {
             eksctl delete cluster
                 --config-file eksctl-config.yaml --wait
         )
+
+    } else if $hyperscaler == "azure" {
+
+        az group delete --name $env.RESOURCE_GROUP --yes
 
     }
 
