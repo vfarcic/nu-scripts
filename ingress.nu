@@ -1,16 +1,37 @@
 #!/usr/bin/env nu
 
-def install_ingress [hyperscaler: string] {
+def apply_ingress [provider: string, type = "traefik"] {
 
-    (
-        helm upgrade --install traefik traefik
-            --repo https://helm.traefik.io/traefik
-            --namespace traefik --create-namespace --wait
-    )
+    if $type == "traefik" {
+
+        (
+            helm upgrade --install traefik traefik
+                --repo https://helm.traefik.io/traefik
+                --namespace traefik --create-namespace --wait
+        )
+    
+    } else if $type == "nginx" {
+
+        if $provider == "kind" {
+
+            (
+                kubectl apply
+                    --filename https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+            )
+
+        }
+
+    } else {
+
+        print $"(ansi red_bold)($type)(ansi reset) is not a supported."
+        exit 1
+
+    }
 
     mut ingress_ip = ""
 
-    if $hyperscaler == "aws" {
+    
+    if $provider == "aws" {
 
         sleep 10sec
 
@@ -26,6 +47,10 @@ def install_ingress [hyperscaler: string] {
             sleep 10sec
             $ingress_ip = (dig +short $ingress_hostname)
         }
+
+    } else if $provider == "kind" {
+
+        $ingress_ip = "127.0.0.1"
 
     } else {
 
@@ -46,6 +71,6 @@ def install_ingress [hyperscaler: string] {
     $"export INGRESS_IP=($ingress_ip)\n" | save --append .env
     $"export INGRESS_HOST=($ingress_ip).nip.io\n" | save --append .env
 
-    {ip: $ingress_ip, host: $"($ingress_ip).nip.io", class: "traefik"}
+    {ip: $ingress_ip, host: $"($ingress_ip).nip.io", class: $type}
 
 }

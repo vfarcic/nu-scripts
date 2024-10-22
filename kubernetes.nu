@@ -1,13 +1,13 @@
 #!/usr/bin/env nu
 
-def --env create_kubernetes [hyperscaler: string, min_nodes: int, max_nodes: int] {
+def --env create_kubernetes [provider: string, min_nodes = 2, max_nodes = 4] {
 
     rm --force kubeconfig.yaml
 
     $env.KUBECONFIG = $"($env.PWD)/kubeconfig.yaml"
     $"export KUBECONFIG=($env.KUBECONFIG)\n" | save --append .env
 
-    if $hyperscaler == "google" {
+    if $provider == "google" {
 
         let project_id = $"dot-(date now | format date "%Y%m%d%H%M%S")"
         $"export PROJECT_ID=($project_id)\n" | save --append .env
@@ -35,7 +35,7 @@ Press any key to continue.
                 --project $project_id --zone us-east1-b
         )
 
-    } else if $hyperscaler == "aws" {
+    } else if $provider == "aws" {
 
         mut aws_access_key_id = ""
         if AWS_ACCESS_KEY_ID in $env {
@@ -82,7 +82,7 @@ aws_secret_access_key = ($aws_secret_access_key)
                 --region us-east-1 --force
         )
 
-    } else if $hyperscaler == "azure" {
+    } else if $provider == "azure" {
 
         mut tenant_id = ""
         if AZURE_TENANT in $env {
@@ -113,10 +113,14 @@ aws_secret_access_key = ($aws_secret_access_key)
             az aks get-credentials --resource-group $resource_group
                 --name dot --file $env.KUBECONFIG
         )
+
+    } else if $provider == "kind" {
+
+        kind create cluster --config kind.yaml
     
     } else {
 
-        print $"(ansi red_bold)($hyperscaler)(ansi reset) is not a supported hyperscaler."
+        print $"(ansi red_bold)($provider)(ansi reset) is not a supported."
         exit 1
 
     }
@@ -125,9 +129,9 @@ aws_secret_access_key = ($aws_secret_access_key)
 
 }
 
-def destroy_kubernetes [hyperscaler: string] {
+def destroy_kubernetes [provider: string] {
 
-    if $hyperscaler == "google" {
+    if $provider == "google" {
 
         rm kubeconfig.yaml
 
@@ -138,7 +142,7 @@ def destroy_kubernetes [hyperscaler: string] {
 
         gcloud projects delete $env.PROJECT_ID --quiet
     
-    } else if $hyperscaler == "aws" {
+    } else if $provider == "aws" {
 
         (
             eksctl delete addon --name aws-ebs-csi-driver
@@ -156,9 +160,13 @@ def destroy_kubernetes [hyperscaler: string] {
                 --config-file eksctl-config.yaml --wait
         )
 
-    } else if $hyperscaler == "azure" {
+    } else if $provider == "azure" {
 
         az group delete --name $env.RESOURCE_GROUP --yes
+
+    } else if $provider == "kind" {
+
+        kind delete cluster
 
     }
 
