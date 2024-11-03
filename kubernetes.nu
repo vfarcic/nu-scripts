@@ -1,10 +1,8 @@
 #!/usr/bin/env nu
 
-def --env create_kubernetes [provider: string, min_nodes = 2, max_nodes = 4] {
+def --env create_kubernetes [provider: string, name = "dot", min_nodes = 2, max_nodes = 4] {
 
-    rm --force kubeconfig.yaml
-
-    $env.KUBECONFIG = $"($env.PWD)/kubeconfig.yaml"
+    $env.KUBECONFIG = $"($env.PWD)/kubeconfig-($name).yaml"
     $"export KUBECONFIG=($env.KUBECONFIG)\n" | save --append .env
 
     if $provider == "google" {
@@ -23,7 +21,7 @@ Press any key to continue.
         input
 
         (
-            gcloud container clusters create dot --project $project_id
+            gcloud container clusters create $name --project $project_id
                 --zone us-east1-b --machine-type e2-standard-8
                 --enable-autoscaling --num-nodes $min_nodes
                 --min-nodes $min_nodes --max-nodes $max_nodes
@@ -31,7 +29,7 @@ Press any key to continue.
         )
 
         (
-            gcloud container clusters get-credentials dot
+            gcloud container clusters get-credentials $name
                 --project $project_id --zone us-east1-b
         )
 
@@ -71,13 +69,13 @@ aws_secret_access_key = ($aws_secret_access_key)
     
         (
             eksctl create cluster
-                --config-file eksctl-config.yaml
+                --config-file $"eksctl-config-($name).yaml"
                 --kubeconfig $env.KUBECONFIG
         )
     
         (
             eksctl create addon --name aws-ebs-csi-driver
-                --cluster dot-production
+                --cluster $name
                 --service-account-role-arn $"arn:aws:iam::($aws_account_id):role/AmazonEKS_EBS_CSI_DriverRole"
                 --region us-east-1 --force
         )
@@ -101,7 +99,7 @@ aws_secret_access_key = ($aws_secret_access_key)
         az group create --name $resource_group --location $location
 
         (
-            az aks create --resource-group $resource_group --name dot
+            az aks create --resource-group $resource_group --name $name
                 --node-count $min_nodes --min-count $min_nodes
                 --max-count $max_nodes
                 --node-vm-size Standard_B2ms
@@ -111,7 +109,7 @@ aws_secret_access_key = ($aws_secret_access_key)
 
         (
             az aks get-credentials --resource-group $resource_group
-                --name dot --file $env.KUBECONFIG
+                --name $name --file $env.KUBECONFIG
         )
 
     } else if $provider == "kind" {
@@ -129,14 +127,14 @@ aws_secret_access_key = ($aws_secret_access_key)
 
 }
 
-def destroy_kubernetes [provider: string] {
+def destroy_kubernetes [provider: string, name = "dot"] {
 
     if $provider == "google" {
 
         rm kubeconfig.yaml
 
         (
-            gcloud container clusters delete dot
+            gcloud container clusters delete $name
                 --project $env.PROJECT_ID --zone us-east1-b --quiet
         )
 
@@ -146,18 +144,19 @@ def destroy_kubernetes [provider: string] {
 
         (
             eksctl delete addon --name aws-ebs-csi-driver
-                --cluster dot-production --region us-east-1
+                --cluster $name --region us-east-1
         )
 
         (
             eksctl delete nodegroup --name primary
-                --cluster dot-production --drain=false
+                --cluster $name --drain=false
                 --region us-east-1 --wait
         )
 
         (
             eksctl delete cluster
-                --config-file eksctl-config.yaml --wait
+                --config-file $"eksctl-config-($name).yaml"
+                --wait
         )
 
     } else if $provider == "azure" {
@@ -169,5 +168,7 @@ def destroy_kubernetes [provider: string] {
         kind delete cluster
 
     }
+
+    rm --force kubeconfig.yaml
 
 }
