@@ -1,0 +1,30 @@
+{
+  "Name": "Velero",
+  "Description": "Velero related permissions to perform backups, restores and deletions",
+  "Actions": [
+    "Microsoft.Compute/disks/read",
+    "Microsoft.Compute/disks/write",
+    "Microsoft.Compute/disks/endGetAccess/action",
+    "Microsoft.Compute/disks/beginGetAccess/action",
+    "Microsoft.Compute/snapshots/read",
+    "Microsoft.Compute/snapshots/write",
+    "Microsoft.Compute/snapshots/delete",
+    "Microsoft.Storage/storageAccounts/listkeys/action",
+    "Microsoft.Storage/storageAccounts/regeneratekey/action",
+    "Microsoft.Storage/storageAccounts/read",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/delete",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/read",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/write",
+    "Microsoft.Storage/storageAccounts/blobServices/generateUserDelegationKey/action"
+  ],
+  "DataActions": [
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/delete",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/move/action",
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/add/action"
+  ],
+  "AssignableScopes": [
+    "/subscriptions/7f9f9b08-7d00-43c9-9d30-f10bb79e9a61"
+  ]
+}
