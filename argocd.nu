@@ -4,23 +4,30 @@ def apply_argocd [host_name = "", apply_apps = true, ingress_class_name = "traef
 
     let git_url = git config --get remote.origin.url
 
-    if host_name != "" {
-
-        open argocd-values.yaml
-            | upsert server.ingress.ingressClassName $ingress_class_name
-            | upsert server.ingress.hostname $host_name
-            | save argocd-values.yaml --force
-
-    }
-
-    open argocd-apps.yaml
-        | upsert spec.source.repoURL $git_url
-        | save argocd-apps.yaml --force
-
-    open argocd-third-party.yaml
-        | upsert spec.source.repoURL $git_url
-        | save argocd-third-party.yaml --force
-
+    {
+        configs: {
+            secret: {
+                argocdServerAdminPassword: "$2a$10$m3eTlEdRen0nS86c5Zph5u/bDFQMcWZYdG3NVdiyaACCqoxLJaz16"
+                argocdServerAdminPasswordMtime: "2021-11-08T15:04:05Z"
+            }
+            cm: {
+                application.resourceTrackingMethod: annotation
+                timeout.reconciliation: 60s
+            }
+            params: { "server.insecure": true }
+        }
+        server: {
+            ingress: {
+                enabled: true
+                ingressClassName: $ingress_class_name
+                hostname: $host_name
+            }
+            extraArgs: [
+                --insecure
+            ]
+        }
+    } | save argocd-values.yaml --force
+  
     (
         helm upgrade --install argocd argo-cd
             --repo https://argoproj.github.io/argo-helm
@@ -28,11 +35,37 @@ def apply_argocd [host_name = "", apply_apps = true, ingress_class_name = "traef
             --values argocd-values.yaml --wait
     )
 
+    {
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata: {
+            name: apps
+            namespace: argocd
+        }
+        spec: {
+            project: default
+            source: {
+                repoURL: $git_url
+                targetRevision: HEAD
+                path: apps
+            }
+            destination: {
+                server: "https://kubernetes.default.svc"
+                namespace: a-team
+            }
+            syncPolicy: {
+                automated: {
+                    selfHeal: true
+                    prune: true
+                    allowEmpty: true
+                }
+            }
+        }
+    } | save argocd-apps.yaml --force
+
     if $apply_apps {
         
         kubectl apply --filename argocd-apps.yaml
-
-        kubectl apply --filename argocd-third-party.yaml
 
     }
 
