@@ -1,6 +1,6 @@
 #!/usr/bin/env nu
 
-def --env create_kubernetes [provider: string, name = "dot", min_nodes = 2, max_nodes = 4, auth = true] {
+def --env "main create kubernetes" [provider: string, name = "dot", min_nodes = 2, max_nodes = 4, auth = true] {
 
     $env.KUBECONFIG = $"($env.PWD)/kubeconfig-($name).yaml"
     $"export KUBECONFIG=($env.KUBECONFIG)\n" | save --append .env
@@ -131,28 +131,6 @@ aws_secret_access_key = ($aws_secret_access_key)
 
     } else if $provider == "kind" {
 
-        if ("kind.yaml" | path exists) == false {
-        "
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-  - role: control-plane
-    kubeadmConfigPatches:
-      - |
-        kind: InitConfiguration
-        nodeRegistration:
-          kubeletExtraArgs:
-            node-labels: "ingress-ready=true"
-    extraPortMappings:
-      - containerPort: 80
-        hostPort: 80
-        protocol: TCP
-      - containerPort: 443
-        hostPort: 443
-        protocol: TCP
-" | save kind.yaml
-        }
-
         kind create cluster --config kind.yaml
     
     } else {
@@ -166,7 +144,7 @@ nodes:
 
 }
 
-def destroy_kubernetes [provider: string, name = "dot", delete_project = true] {
+def "main destroy kubernetes" [provider: string, name = "dot", delete_project = true] {
 
     if $provider == "google" {
 
