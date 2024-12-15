@@ -8,13 +8,23 @@ def "main build image" [
     --image = "silly-demo"         # Image name (e.g., silly-demo)
     --builder = "docker"           # Image builder; currently supported are: `docker` and `kaniko`
     --push = true                  # Whether to push the image to the registry
+    --dockerfile = "Dockerfile"    # Path to Dockerfile
 ] {
 
     if $builder == "docker" {
 
-        docker image build --tag $"($registry)/($registry_user)/($image):latest" .
+        (
+            docker image build
+                --tag $"($registry)/($registry_user)/($image):latest"
+                --file $dockerfile
+                .
+        )
 
-        docker image tag $"($registry)/($registry_user)/($image):latest" $"($registry)/($registry_user)/($image):($tag)"
+        (
+            docker image tag
+                $"($registry)/($registry_user)/($image):latest"
+                $"($registry)/($registry_user)/($image):($tag)"
+        )
 
         if $push {
 
@@ -38,3 +48,4 @@ def "main build image" [
     } 
 
 }
+
