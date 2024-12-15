@@ -98,20 +98,51 @@ aws_secret_access_key = ($env.AWS_SECRET_ACCESS_KEY)
                 --from-file creds=./aws-creds.conf
         )
 
+    } else if $hyperscaler == "azure" {
+
+        mut azure_tenant = ""
+        if AZURE_TENANT not-in $env {
+            $azure_tenant = input $"(ansi green_bold)Enter Azure Tenant: (ansi reset)"
+        } else {
+            $azure_tenant = $env.AZURE_TENANT
+        }
+        $"export AZURE_TENANT=($azure_tenant)\n"
+            | save --append .env
+        
+        az login --tenant $azure_tenant
+    
+        let subscription_id = (az account show --query id -o tsv)
+    
+        (
+            az ad sp create-for-rbac --sdk-auth --role Owner
+                --scopes $"/subscriptions/($subscription_id)"
+                | save azure-creds.json --force
+        )
+
+        (
+            kubectl --namespace crossplane-system
+                create secret generic azure-creds
+                --from-file creds=./azure-creds.json
+        )
+
     }
 
     if $app {
+
+        print $"(ansi yellow_bold)Applying `dot-application` Configuration...(ansi reset)"
 
         {
             apiVersion: "pkg.crossplane.io/v1"
             kind: "Configuration"
             metadata: { name: "crossplane-app" }
-            spec: { package: "xpkg.upbound.io/devops-toolkit/dot-application:v0.6.34" }
+            spec: { package: "xpkg.upbound.io/devops-toolkit/dot-application:v0.6.44" }
         } | to yaml | kubectl apply --filename -
 
     }
 
     if $db {
+
+        print $"(ansi yellow_bold)Applying `dot-sql` Configuration...(ansi reset)"
 
         if $hyperscaler == "google" {
             
@@ -136,11 +167,13 @@ Press any key to continue.
 
     if $github {
 
+        print $"(ansi yellow_bold)Applying `dot-github` Configuration...(ansi reset)"
+
         {
             apiVersion: "pkg.crossplane.io/v1"
             kind: "Configuration"
             metadata: { name: "devops-toolkit-dot-github" }
-            spec: { package: "xpkg.upbound.io/devops-toolkit/dot-github:v0.0.56" }
+            spec: { package: "xpkg.upbound.io/devops-toolkit/dot-github:v0.0.57" }
         } | to yaml | kubectl apply --filename -
 
     }
@@ -277,6 +310,24 @@ Press any key to continue.
             }
         } | to yaml | kubectl apply --filename -
     
+    } else if $hyperscaler == "azure" {
+
+        {
+            apiVersion: "azure.upbound.io/v1beta1"
+            kind: "ProviderConfig"
+            metadata: { name: default }
+            spec: {
+                credentials: {
+                    source: "Secret"
+                    secretRef: {
+                        namespace: "crossplane-system"
+                        name: "azure-creds"
+                        key: "creds"
+                    }
+                }
+            }
+        } | to yaml | kubectl apply --filename -
+
     }
 
     if ($github_user | is-not-empty) and ($github_token | is-not-empty) {
@@ -320,14 +371,16 @@ Press any key to continue.
 
 }
 
-def "main delete crossplane" [hyperscaler = none] {
+def "main delete crossplane" [
+    waitForManaged = true
+] {
 
-    if $hyperscaler == "google" {
+    mut counter = (kubectl get managed --output name | grep -v object | grep -v database | wc -l | into int)
 
-        let project_id = $env.PROJECT_ID
-
-        gcloud projects delete $project_id --quiet
-
+    while $counter > 0 {
+        print $"Waiting for remaining ($counter) managed resources to be removed..."
+        sleep 10sec
+        $counter = (kubectl get managed --output name | grep -v object | grep -v database | wc -l | into int)
     }
 
 }
