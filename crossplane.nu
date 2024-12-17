@@ -21,11 +21,12 @@ def "main apply crossplane" [
 
     if $hyperscaler == "google" {
 
-        gcloud auth login
-
         if PROJECT_ID in $env {
             $project_id = $env.PROJECT_ID
         } else {
+
+            gcloud auth login
+
             $project_id = $"dot-(date now | format date "%Y%m%d%H%M%S")"
             $env.PROJECT_ID = $project_id
             $"export PROJECT_ID=($project_id)\n" | save --append .env
@@ -40,49 +41,52 @@ Press any key to continue.
 "
             input
 
-            let sa_name = "devops-toolkit"
-
-            let sa = $"($sa_name)@($project_id).iam.gserviceaccount.com"
-        
-            (
-                gcloud iam service-accounts create $sa_name
-                    --project $project_id
-            )
-
-            sleep 2sec
-        
-            (
-                gcloud projects add-iam-policy-binding
-                    --role roles/admin $project_id
-                    --member $"serviceAccount:($sa)"
-            )
-        
-            (
-                gcloud iam service-accounts keys
-                    create gcp-creds.json --project $project_id
-                    --iam-account $sa
-            )
-        
-            (
-                kubectl --namespace crossplane-system
-                    create secret generic gcp-creds
-                    --from-file creds=./gcp-creds.json
-            )
-
         }
+
+        let sa_name = "devops-toolkit"
+
+        let sa = $"($sa_name)@($project_id).iam.gserviceaccount.com"
+
+        let project = $project_id
+    
+        do --ignore-errors {(
+            gcloud iam service-accounts create $sa_name
+                --project $project
+        )}
+
+        sleep 5sec
+
+        print $project_id
+        print $sa
+    
+        (
+            gcloud projects add-iam-policy-binding
+                --role roles/admin $project_id
+                --member $"serviceAccount:($sa)"
+        )
+    
+        (
+            gcloud iam service-accounts keys
+                create gcp-creds.json --project $project_id
+                --iam-account $sa
+        )
+    
+        (
+            kubectl --namespace crossplane-system
+                create secret generic gcp-creds
+                --from-file creds=./gcp-creds.json
+        )
 
     } else if $hyperscaler == "aws" {
 
         if AWS_ACCESS_KEY_ID not-in $env {
-            let value = input $"(ansi green_bold)Enter AWS Access Key ID: (ansi reset)"
-            $env.AWS_ACCESS_KEY_ID = $value
+            $env.AWS_ACCESS_KEY_ID = input $"(ansi green_bold)Enter AWS Access Key ID: (ansi reset)"
         }
         $"export AWS_ACCESS_KEY_ID=($env.AWS_ACCESS_KEY_ID)\n"
             | save --append .env
 
         if AWS_SECRET_ACCESS_KEY not-in $env {
-            let value = input $"(ansi green_bold)Enter AWS Secret Access Key: (ansi reset)"
-            $env.AWS_SECRET_ACCESS_KEY = $value
+            $env.AWS_SECRET_ACCESS_KEY = input $"(ansi green_bold)Enter AWS Secret Access Key: (ansi reset)"
         }
         $"export AWS_SECRET_ACCESS_KEY=($env.AWS_SECRET_ACCESS_KEY)\n"
             | save --append .env
@@ -135,7 +139,7 @@ aws_secret_access_key = ($env.AWS_SECRET_ACCESS_KEY)
             apiVersion: "pkg.crossplane.io/v1"
             kind: "Configuration"
             metadata: { name: "crossplane-app" }
-            spec: { package: "xpkg.upbound.io/devops-toolkit/dot-application:v0.6.44" }
+            spec: { package: "xpkg.upbound.io/devops-toolkit/dot-application:v0.6.46" }
         } | to yaml | kubectl apply --filename -
 
     }
