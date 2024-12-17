@@ -81,9 +81,9 @@ aws_secret_access_key = ($aws_secret_access_key)
             apiVersion: "eksctl.io/v1alpha5"
             kind: "ClusterConfig"
             metadata: {
-                name: "dot-production"
+                name: "dot"
                 region: "us-east-1"
-                version: "1.29"
+                version: "1.31"
             }
             managedNodeGroups: [{
                 name: "primary"
@@ -97,7 +97,7 @@ aws_secret_access_key = ($aws_secret_access_key)
                     }
                 }
             }]
-        } | to yaml | save $"eksctl-config-($name).yaml"
+        } | to yaml | save $"eksctl-config-($name).yaml" --force
     
         (
             eksctl create cluster
@@ -191,7 +191,7 @@ def "main destroy kubernetes" [provider: string, name = "dot", delete_project = 
         (
             eksctl delete nodegroup --name primary
                 --cluster $name --drain=false
-                --region us-east-1 --wait
+                --region us-east-1 --parallel 10 --wait
         )
 
         (
