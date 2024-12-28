@@ -1,11 +1,17 @@
 #!/usr/bin/env nu
 
-def --env "main create kubernetes" [provider: string, name = "dot", min_nodes = 2, max_nodes = 4, auth = true] {
+def --env "main create kubernetes" [
+    hyperscaler: string,
+    name = "dot",
+    min_nodes = 2,
+    max_nodes = 4,
+    auth = true
+] {
 
     $env.KUBECONFIG = $"($env.PWD)/kubeconfig-($name).yaml"
     $"export KUBECONFIG=($env.KUBECONFIG)\n" | save --append .env
 
-    if $provider == "google" {
+    if $hyperscaler == "google" {
 
         if $auth {
             gcloud auth login
@@ -43,7 +49,7 @@ Press any key to continue.
                 --project $project_id --zone us-east1-b
         )
 
-    } else if $provider == "aws" {
+    } else if $hyperscaler == "aws" {
 
         mut aws_access_key_id = ""
         if AWS_ACCESS_KEY_ID in $env {
@@ -112,7 +118,12 @@ aws_secret_access_key = ($aws_secret_access_key)
                 --region us-east-1 --force
         )
 
-    } else if $provider == "azure" {
+        (
+            kubectl patch storageclass gp2
+                --patch '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+        )
+
+    } else if $hyperscaler == "azure" {
 
         mut tenant_id = ""
         let location = "eastus"
@@ -151,7 +162,7 @@ aws_secret_access_key = ($aws_secret_access_key)
                 --name $name --file $env.KUBECONFIG
         )
 
-    } else if $provider == "kind" {
+    } else if $hyperscaler == "kind" {
 
         {
             kind: "Cluster"
@@ -179,7 +190,7 @@ nodeRegistration:
     
     } else {
 
-        print $"(ansi red_bold)($provider)(ansi reset) is not a supported."
+        print $"(ansi red_bold)($hyperscaler)(ansi reset) is not a supported."
         exit 1
 
     }
@@ -188,9 +199,9 @@ nodeRegistration:
 
 }
 
-def "main destroy kubernetes" [provider: string, name = "dot", delete_project = true] {
+def "main destroy kubernetes" [hyperscaler: string, name = "dot", delete_project = true] {
 
-    if $provider == "google" {
+    if $hyperscaler == "google" {
 
         rm --force kubeconfig.yaml
 
@@ -203,7 +214,7 @@ def "main destroy kubernetes" [provider: string, name = "dot", delete_project = 
             gcloud projects delete $env.PROJECT_ID --quiet
         }
     
-    } else if $provider == "aws" {
+    } else if $hyperscaler == "aws" {
 
         (
             eksctl delete addon --name aws-ebs-csi-driver
@@ -222,11 +233,11 @@ def "main destroy kubernetes" [provider: string, name = "dot", delete_project = 
                 --wait
         )
 
-    } else if $provider == "azure" {
+    } else if $hyperscaler == "azure" {
 
         az group delete --name $env.RESOURCE_GROUP --yes
 
-    } else if $provider == "kind" {
+    } else if $hyperscaler == "kind" {
 
         kind delete cluster
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env nu
 
 def "main apply ingress" [
-    type = "traefik" # The type of Ingress controller to apply. Available options: traefik, contour, nginx
-    --hyperscaler = ""
+    class = "traefik" # The class of Ingress controller to apply. Available options: traefik, contour, nginx
+    --hyperscaler = "none"
     --env_prefix = ""
 ] {
 
-    if $type == "traefik" {
+    if $class == "traefik" {
 
         (
             helm upgrade --install traefik traefik
@@ -14,7 +14,7 @@ def "main apply ingress" [
                 --namespace traefik --create-namespace --wait
         )
 
-    } else if $type == "contour" {
+    } else if $class == "contour" {
 
         helm repo add bitnami https://charts.bitnami.com/bitnami
 
@@ -25,7 +25,7 @@ def "main apply ingress" [
                 --namespace contour --create-namespace --wait
         )
     
-    } else if $type == "nginx" {
+    } else if $class == "nginx" {
 
         if $hyperscaler == "kind" {
 
@@ -60,24 +60,24 @@ def "main apply ingress" [
 
     } else {
 
-        print $"(ansi red_bold)($type)(ansi reset) is not a supported."
+        print $"(ansi red_bold)($class)(ansi reset) is not a supported."
         exit 1
 
     }
 
-    main get ingress $type --hyperscaler $hyperscaler --env_prefix $env_prefix
+    main get ingress $class --hyperscaler $hyperscaler --env_prefix $env_prefix
 
 }
 
 def "main get ingress" [
-    type = "traefik" # The type of Ingress controller to apply. Available options: traefik, contour, nginx
+    class = "traefik" # The class of Ingress controller to apply. Available options: traefik, contour, nginx
     --hyperscaler: string
     --env_prefix = ""
 ] {
 
-    mut service_name = $type
+    mut service_name = $class
 
-    if $type == "contour" {
+    if $class == "contour" {
         $service_name = "contour-envoy"
     }
     
@@ -88,7 +88,7 @@ def "main get ingress" [
         sleep 30sec
 
         let ingress_hostname = (
-            kubectl --namespace $type
+            kubectl --namespace $class
                 get service $service_name --output yaml
                 | from yaml
                 | get status.loadBalancer.ingress.0.hostname
@@ -110,12 +110,12 @@ def "main get ingress" [
 
         while $ingress_ip == "" {
 
-            print "Waiting for Ingress Service IP..."
+            print $"Waiting for ($class) Ingress IP from ($service_name) Service..."
 
             sleep 10sec
 
             $ingress_ip = (
-                kubectl --namespace $type
+                kubectl --namespace $class
                     get service $service_name --output yaml
                     | from yaml
                     | get status.loadBalancer.ingress.0.ip
@@ -127,6 +127,6 @@ def "main get ingress" [
     $"export ($env_prefix)INGRESS_IP=($ingress_ip)\n" | save --append .env
     $"export ($env_prefix)INGRESS_HOST=($ingress_ip).nip.io\n" | save --append .env
 
-    {ip: $ingress_ip, host: $"($ingress_ip).nip.io", class: $type}
+    {ip: $ingress_ip, host: $"($ingress_ip).nip.io", class: $class}
 
 }
