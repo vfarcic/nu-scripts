@@ -9,7 +9,7 @@ def --env "main get registry" []: [
 
     mut server = ""
     if "REGISTRY_SERVER" not-in $env {
-        $server = input $"(ansi green_bold)Enter container image registry user \(e.g., `ghcr.io`\):(ansi reset)"
+        $server = input $"(ansi green_bold)Enter container image registry \(e.g., ghcr.io\):(ansi reset) "
     } else {
         $server = $env.REGISTRY_SERVER
     }
@@ -17,7 +17,7 @@ def --env "main get registry" []: [
 
     mut user = ""
     if "REGISTRY_USER" not-in $env {
-        $user = input $"(ansi green_bold)Enter container image registry user (e.g., `vfarcic`):(ansi reset)"
+        $user = input $"(ansi green_bold)Enter container image registry user \(e.g., vfarcic\):(ansi reset) "
     } else {
         $user = $env.REGISTRY_USER
     }
@@ -25,7 +25,7 @@ def --env "main get registry" []: [
 
     mut email = ""
     if "REGISTRY_EMAIL" not-in $env {
-        $email = input $"(ansi green_bold)Enter container image registry email (e.g., `viktor@farcic.com`):(ansi reset)"
+        $email = input $"(ansi green_bold)Enter container image registry email \(e.g., viktor@farcic.com\):(ansi reset) "
     } else {
         $email = $env.REGISTRY_EMAIL
     }
@@ -33,7 +33,7 @@ def --env "main get registry" []: [
 
     mut password = ""
     if "REGISTRY_PASSWORD" not-in $env {
-        $password = input $"(ansi green_bold)Enter container image registry token:(ansi reset)"
+        $password = input $"(ansi green_bold)Enter container image registry token:(ansi reset) "
     } else {
         $password = $env.REGISTRY_PASSWORD
     }
