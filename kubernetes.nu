@@ -199,7 +199,11 @@ nodeRegistration:
 
 }
 
-def "main destroy kubernetes" [hyperscaler: string, name = "dot", delete_project = true] {
+def "main destroy kubernetes" [
+    hyperscaler: string
+    --name = "dot"
+    delete_project = true
+] {
 
     if $hyperscaler == "google" {
 
