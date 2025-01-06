@@ -9,3 +9,11 @@ def "main get hyperscaler" [] {
 
     $hyperscaler
 }
+
+def "main print source" [] {
+
+    print $"
+Execute `(ansi yellow_bold)source .env(ansi reset)` to load the environment variables.
+"
+
+}
