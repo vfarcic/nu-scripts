@@ -49,6 +49,7 @@ Press any key to continue.
         | upsert kubernetesIngestor.crossplane.xrds.taskRunner.frequency 10
         | upsert kubernetesIngestor.crossplane.xrds.taskRunner.timeout 600
         | upsert kubernetesIngestor.crossplane.xrds.ingestAllXRDs true
+        | upsert kubernetesIngestor.crossplane.xrds.convertDefaultValuesToPlaceholders true
         | upsert kubernetes {}
         | upsert kubernetes.frontend.podDelete.enabled true
         | upsert kubernetes.serviceLocatorMethod.type "multiTenant"

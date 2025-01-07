@@ -182,7 +182,6 @@ aws_secret_access_key = ($env.AWS_SECRET_ACCESS_KEY)
                 spec: {
                     policyName: "dot-app"
                     validationActions: ["Deny"]
-                    # matchResources: { namespaceSelector: { matchLabels: { "kubernetes.io/metadata.name": a-team } } }
                 }
             } | to yaml | kubectl apply --filename -
 
@@ -313,6 +312,13 @@ Press any key to continue.
     } | to yaml | kubectl apply --filename -
 
     wait crossplane
+
+    {
+        apiVersion: "kubernetes.crossplane.io/v1alpha1"
+        kind: "ProviderConfig"
+        metadata: { name: "default" }
+        spec: { credentials: { source: "InjectedIdentity" } }
+    } | to yaml | kubectl apply --filename -
 
     if $db and $hyperscaler != "none" {
 
