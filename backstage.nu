@@ -16,15 +16,15 @@ Press any key to continue.
 
     for package in [
         "@terasky/backstage-plugin-crossplane-common@1.1.0",
-        "@terasky/backstage-plugin-crossplane-permissions-backend@1.1.0",
-        "@terasky/backstage-plugin-kubernetes-ingestor@1.4.1",
-        "@terasky/backstage-plugin-scaffolder-backend-module-terasky-utils@1.0.3"
+        "@terasky/backstage-plugin-crossplane-permissions-backend@1.1.1",
+        "@terasky/backstage-plugin-kubernetes-ingestor@1.5.0",
+        "@terasky/backstage-plugin-scaffolder-backend-module-terasky-utils@1.1.0"
     ] {
         yarn --cwd packages/backend add $package
     }
 
     for package in [
-        @terasky/backstage-plugin-crossplane-resources-frontend@1.4.0
+        "@terasky/backstage-plugin-crossplane-resources-frontend@1.4.0"
     ] {
         yarn --cwd packages/app add $package
     }
@@ -38,6 +38,10 @@ Press any key to continue.
         | upsert kubernetesIngestor.components.excludedNamespaces []
         | upsert kubernetesIngestor.components.excludedNamespaces.0 "kube-public"
         | upsert kubernetesIngestor.components.excludedNamespaces.1 "kube-system"
+        | upsert kubernetesIngestor.components.customWorkloadTypes []
+        | upsert kubernetesIngestor.components.customWorkloadTypes.0.group "core.oam.dev"
+        | upsert kubernetesIngestor.components.customWorkloadTypes.0.apiVersion "v1beta1"
+        | upsert kubernetesIngestor.components.customWorkloadTypes.0.plural "applications"
         | upsert kubernetesIngestor.components.disableDefaultWorkloadTypes true
         | upsert kubernetesIngestor.components.onlyIngestAnnotatedResources false
         | upsert kubernetesIngestor.crossplane.claims.ingestAllClaims true
