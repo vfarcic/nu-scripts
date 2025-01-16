@@ -167,6 +167,7 @@ aws_secret_access_key = ($aws_secret_access_key)
         {
             kind: "Cluster"
             apiVersion: "kind.x-k8s.io/v1alpha4"
+            name: $name
             nodes: [{
                 role: "control-plane"
                 kubeadmConfigPatches: ['kind: InitConfiguration
@@ -243,7 +244,7 @@ def "main destroy kubernetes" [
 
     } else if $hyperscaler == "kind" {
 
-        kind delete cluster
+        kind delete cluster --name $name
 
     }
 
