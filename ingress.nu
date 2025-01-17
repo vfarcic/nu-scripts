@@ -1,6 +1,10 @@
 #!/usr/bin/env nu
 
-def "main apply ingress" [
+# Applies Ingress
+#
+# Examples:
+# > main apply ingress "contour" --hyperscaler aws
+def --env "main apply ingress" [
     class = "traefik" # The class of Ingress controller to apply. Available options: traefik, contour, nginx
     --hyperscaler = "none"
     --env_prefix = ""

@@ -5,11 +5,14 @@ def --env "main create kubernetes" [
     --name = "dot",
     --min_nodes = 2,
     --max_nodes = 4,
+    --node_size = "small" # Supported values: small, medium, large
     --auth = true
+    --enable_ingress = true
 ] {
 
     $env.KUBECONFIG = $"($env.PWD)/kubeconfig-($name).yaml"
     $"export KUBECONFIG=($env.KUBECONFIG)\n" | save --append .env
+    $"export KUBECONFIG_($name | str upcase)=($env.KUBECONFIG)\n" | save --append .env
 
     if $hyperscaler == "google" {
 
@@ -36,9 +39,16 @@ Press any key to continue.
             input
         }
 
+        mut vm_size = "e2-standard-2"
+        if $node_size == "medium" {
+            $vm_size = "e2-standard-4"
+        } else if $node_size == "large" {
+            $vm_size = "e2-standard-8"
+        }
+
         (
             gcloud container clusters create $name --project $project_id
-                --zone us-east1-b --machine-type e2-standard-8
+                --zone us-east1-b --machine-type $vm_size
                 --enable-autoscaling --num-nodes $min_nodes
                 --min-nodes $min_nodes --max-nodes $max_nodes
                 --enable-network-policy --no-enable-autoupgrade
@@ -51,77 +61,7 @@ Press any key to continue.
 
     } else if $hyperscaler == "aws" {
 
-        mut aws_access_key_id = ""
-        if AWS_ACCESS_KEY_ID in $env {
-            $aws_access_key_id = $env.AWS_ACCESS_KEY_ID
-        } else {
-            $aws_access_key_id = input $"(ansi green_bold)Enter AWS Access Key ID: (ansi reset)"
-        }
-        $"export AWS_ACCESS_KEY_ID=($aws_access_key_id)\n"
-            | save --append .env
-
-        mut aws_secret_access_key = ""
-        if AWS_SECRET_ACCESS_KEY in $env {
-            $aws_secret_access_key = $env.AWS_SECRET_ACCESS_KEY
-        } else {
-            $aws_secret_access_key = input $"(ansi green_bold)Enter AWS Secret Access Key: (ansi reset)" --suppress-output
-        }
-        $"export AWS_SECRET_ACCESS_KEY=($aws_secret_access_key)\n"
-            | save --append .env
-    
-        mut aws_account_id = ""
-        if AWS_ACCOUNT_ID in $env {
-            $aws_account_id = $env.AWS_ACCOUNT_ID
-        } else {
-            $aws_account_id = input $"(ansi green_bold)Enter AWS Account ID: (ansi reset)"
-        }
-        $"export AWS_ACCOUNT_ID=($aws_account_id)\n"
-            | save --append .env
-    
-        $"[default]
-aws_access_key_id = ($aws_access_key_id)
-aws_secret_access_key = ($aws_secret_access_key)
-" | save aws-creds.conf --force
-
-        {
-            apiVersion: "eksctl.io/v1alpha5"
-            kind: "ClusterConfig"
-            metadata: {
-                name: "dot"
-                region: "us-east-1"
-                version: "1.31"
-            }
-            managedNodeGroups: [{
-                name: "primary"
-                instanceType: "t3.large"
-                minSize: 3
-                maxSize: 6
-                iam: {
-                    withAddonPolicies: {
-                        autoScaler: true
-                        ebs: true
-                    }
-                }
-            }]
-        } | to yaml | save $"eksctl-config-($name).yaml" --force
-    
-        (
-            eksctl create cluster
-                --config-file $"eksctl-config-($name).yaml"
-                --kubeconfig $env.KUBECONFIG
-        )
-    
-        (
-            eksctl create addon --name aws-ebs-csi-driver
-                --cluster $name
-                --service-account-role-arn $"arn:aws:iam::($aws_account_id):role/AmazonEKS_EBS_CSI_DriverRole"
-                --region us-east-1 --force
-        )
-
-        (
-            kubectl patch storageclass gp2
-                --patch '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
-        )
+xxx
 
     } else if $hyperscaler == "azure" {
 
@@ -147,12 +87,18 @@ aws_secret_access_key = ($aws_secret_access_key)
             $"export RESOURCE_GROUP=($resource_group)\n" | save --append .env
             az group create --name $resource_group --location $location
         }
+        mut vm_size = "Standard_B2s"
+        if $node_size == "medium" {
+            $vm_size = "Standard_B4ms"
+        } else if $node_size == "large" {
+            $vm_size = "Standard_B8ms"
+        }
 
         (
             az aks create --resource-group $resource_group --name $name
                 --node-count $min_nodes --min-count $min_nodes
                 --max-count $max_nodes
-                --node-vm-size Standard_B2ms
+                --node-vm-size $vm_size
                 --enable-managed-identity --generate-ssh-keys
                 --enable-cluster-autoscaler --yes
         )
@@ -164,28 +110,38 @@ aws_secret_access_key = ($aws_secret_access_key)
 
     } else if $hyperscaler == "kind" {
 
-        {
+        mut config = {
             kind: "Cluster"
             apiVersion: "kind.x-k8s.io/v1alpha4"
             name: $name
             nodes: [{
                 role: "control-plane"
-                kubeadmConfigPatches: ['kind: InitConfiguration
+            }]
+        }
+
+        if $enable_ingress {
+            $config = $config | merge {
+                nodes: [{
+                    role: "control-plane"
+                    kubeadmConfigPatches: ['kind: InitConfiguration
 nodeRegistration:
   kubeletExtraArgs:
     node-labels: "ingress-ready=true"'
-                ]
-                extraPortMappings: [{
-                    containerPort: 80
-                    hostPort: 80
-                    protocol: "TCP"
-                }, {
-                    containerPort: 443
-                    hostPort: 443
-                    protocol: "TCP"
+                    ]
+                    extraPortMappings: [{
+                        containerPort: 80
+                        hostPort: 80
+                        protocol: "TCP"
+                    }, {
+                        containerPort: 443
+                        hostPort: 443
+                        protocol: "TCP"
+                    }]
                 }]
-            }]
-        } | to yaml | save $"kind.yaml" --force
+            }
+        }
+        
+        $config | to yaml | save $"kind.yaml" --force
 
         kind create cluster --config kind.yaml
     
@@ -203,7 +159,7 @@ nodeRegistration:
 def "main destroy kubernetes" [
     hyperscaler: string
     --name = "dot"
-    delete_project = true
+    --delete_project = true
 ] {
 
     if $hyperscaler == "google" {
@@ -240,7 +196,16 @@ def "main destroy kubernetes" [
 
     } else if $hyperscaler == "azure" {
 
-        az group delete --name $env.RESOURCE_GROUP --yes
+        (
+            az aks delete --resource-group $env.RESOURCE_GROUP
+                --name $name --yes
+        )
+
+        if $delete_project {
+
+            az group delete --name $env.RESOURCE_GROUP --yes
+
+        }
 
     } else if $hyperscaler == "kind" {
 
@@ -249,5 +214,181 @@ def "main destroy kubernetes" [
     }
 
     rm --force kubeconfig.yaml
+
+}
+
+def "main create kubernetes_creds" [
+    --source_kuberconfig = "kubeconfig.yaml"
+    --destination_kuberconfig = "kubeconfig_new.yaml"
+] {
+
+    {
+        apiVersion: "v1"
+        kind: "ServiceAccount"
+        metadata: {
+            name: "creds"
+            namespace: "kube-system"
+        }
+    } | to yaml | kubectl --kubeconfig $source_kuberconfig apply --filename -
+
+    {
+        apiVersion: "v1"
+        kind: "Secret"
+        metadata: {
+            name: "creds"
+            namespace: "kube-system"
+            annotations: {
+                "kubernetes.io/service-account.name": "creds"
+            }
+        }
+        type: "kubernetes.io/service-account-token"
+    } | to yaml | kubectl --kubeconfig $source_kuberconfig apply --filename -
+
+    {
+        apiVersion: "rbac.authorization.k8s.io/v1"
+        kind: "ClusterRoleBinding"
+        metadata: {
+            name: "creds"
+        }
+        subjects: [{
+            kind: "ServiceAccount"
+            name: "creds"
+            namespace: "kube-system"
+        }]
+        roleRef: {
+            kind: "ClusterRole"
+            name: "cluster-admin"
+            apiGroup: "rbac.authorization.k8s.io"
+        }
+    }
+        | to yaml
+        | kubectl --kubeconfig $source_kuberconfig apply --filename -
+
+    let kube_ca_data = open $source_kuberconfig
+        | get clusters.0.cluster.certificate-authority-data
+
+    let kube_url = open $source_kuberconfig
+        | get clusters.0.cluster.server
+
+    let token_encoded = (
+        kubectl
+            --kubeconfig $source_kuberconfig
+            --namespace kube-system
+            get secret creds --output yaml
+    )
+        | from yaml
+        | get data.token
+
+    let token = ($token_encoded | decode base64 | decode)
+
+    {
+        apiVersion: "v1"
+        kind: "Config"
+        clusters: [{
+            name: "default-cluster"
+            cluster: {
+                certificate-authority-data: $kube_ca_data
+                server: $"($kube_url):443"
+            }
+        }]
+        contexts: [{
+            name: "default-context"
+            context: {
+                cluster: "default-cluster"
+                namespace: "default"
+                user: "default-user"
+            }
+        }]
+        current-context: "default-context"
+        users: [{
+            name: "default-user"
+            user: {
+                token: $token
+            }
+        }]
+    } | to yaml | save $source_kuberconfig --force
+
+}
+
+def "create eks" [] {
+
+    mut aws_access_key_id = ""
+    if AWS_ACCESS_KEY_ID in $env {
+        $aws_access_key_id = $env.AWS_ACCESS_KEY_ID
+    } else {
+        $aws_access_key_id = input $"(ansi green_bold)Enter AWS Access Key ID: (ansi reset)"
+    }
+    $"export AWS_ACCESS_KEY_ID=($aws_access_key_id)\n"
+        | save --append .env
+
+    mut aws_secret_access_key = ""
+    if AWS_SECRET_ACCESS_KEY in $env {
+        $aws_secret_access_key = $env.AWS_SECRET_ACCESS_KEY
+    } else {
+        $aws_secret_access_key = input $"(ansi green_bold)Enter AWS Secret Access Key: (ansi reset)" --suppress-output
+    }
+    $"export AWS_SECRET_ACCESS_KEY=($aws_secret_access_key)\n"
+        | save --append .env
+
+    mut aws_account_id = ""
+    if AWS_ACCOUNT_ID in $env {
+        $aws_account_id = $env.AWS_ACCOUNT_ID
+    } else {
+        $aws_account_id = input $"(ansi green_bold)Enter AWS Account ID: (ansi reset)"
+    }
+    $"export AWS_ACCOUNT_ID=($aws_account_id)\n"
+        | save --append .env
+
+    $"[default]
+aws_access_key_id = ($aws_access_key_id)
+aws_secret_access_key = ($aws_secret_access_key)
+" | save aws-creds.conf --force
+
+    mut vm_size = "t3.medium"
+    if $node_size == "medium" {
+        $vm_size = "t3.xlarge"
+    } else if $node_size == "large" {
+        $vm_size = "t3.2xlarge"
+    }
+
+    {
+        apiVersion: "eksctl.io/v1alpha5"
+        kind: "ClusterConfig"
+        metadata: {
+            name: $name
+            region: "us-east-1"
+            version: "1.31"
+        }
+        managedNodeGroups: [{
+            name: "primary"
+            instanceType: $vm_size
+            minSize: $min_nodes
+            maxSize: $max_nodes
+            iam: {
+                withAddonPolicies: {
+                    autoScaler: true
+                    ebs: true
+                }
+            }
+        }]
+    } | to yaml | save $"eksctl-config-($name).yaml" --force
+
+    (
+        eksctl create cluster
+            --config-file $"eksctl-config-($name).yaml"
+            --kubeconfig $env.KUBECONFIG
+    )
+
+    (
+        eksctl create addon --name aws-ebs-csi-driver
+            --cluster $name
+            --service-account-role-arn $"arn:aws:iam::($aws_account_id):role/AmazonEKS_EBS_CSI_DriverRole"
+            --region us-east-1 --force
+    )
+
+    (
+        kubectl patch storageclass gp2
+            --patch '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+    )
 
 }

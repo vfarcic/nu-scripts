@@ -17,3 +17,11 @@ Execute `(ansi yellow_bold)source .env(ansi reset)` to load the environment vari
 "
 
 }
+
+def "main delete temp_files" [] {
+
+    rm --force .env
+
+    rm --force kubeconfig*.yaml
+
+}
