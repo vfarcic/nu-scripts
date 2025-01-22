@@ -61,7 +61,10 @@ Press any key to continue.
 
     } else if $hyperscaler == "aws" {
 
-xxx
+        (
+            create eks  --name $name --node_size $node_size
+                --min_nodes $min_nodes --max_nodes $max_nodes
+        )
 
     } else if $hyperscaler == "azure" {
 
@@ -310,7 +313,12 @@ def "main create kubernetes_creds" [
 
 }
 
-def "create eks" [] {
+def "create eks" [
+    --name = "dot",
+    --min_nodes = 2,
+    --max_nodes = 4,
+    --node_size = "small" # Supported values: small, medium, large
+] {
 
     mut aws_access_key_id = ""
     if AWS_ACCESS_KEY_ID in $env {
