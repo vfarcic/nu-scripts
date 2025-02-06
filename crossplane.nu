@@ -138,7 +138,7 @@ aws_secret_access_key = ($env.AWS_SECRET_ACCESS_KEY)
 
     if $app {
 
-        print $"(ansi yellow_bold)Applying `dot-application` Configuration...(ansi reset)"
+        print $"(ansi green_bold)Applying `dot-application` Configuration...(ansi reset)"
 
         {
             apiVersion: "pkg.crossplane.io/v1"
@@ -191,7 +191,7 @@ aws_secret_access_key = ($env.AWS_SECRET_ACCESS_KEY)
 
     if $db {
 
-        print $"(ansi yellow_bold)Applying `dot-sql` Configuration...(ansi reset)"
+        print $"(ansi green_bold)Applying `dot-sql` Configuration...(ansi reset)"
 
         if $hyperscaler == "google" {
             
@@ -216,7 +216,7 @@ Press any key to continue.
 
     if $github {
 
-        print $"(ansi yellow_bold)Applying `dot-github` Configuration...(ansi reset)"
+        print $"(ansi green_bold)Applying `dot-github` Configuration...(ansi reset)"
 
         {
             apiVersion: "pkg.crossplane.io/v1"
@@ -380,7 +380,7 @@ def "main delete crossplane" [
         kubectl --namespace $namespace delete $kind $name
     }
 
-    print $"Waiting for (ansi yellow_bold)Crossplane managed resources(ansi reset) to be deleted..."
+    print $"Waiting for (ansi green_bold)Crossplane managed resources(ansi reset) to be deleted..."
     
     mut command = { kubectl get managed --output name }
     if ($name | is-not-empty) {
@@ -396,7 +396,7 @@ def "main delete crossplane" [
     mut counter = ($resources | wc -l | into int)
 
     while $counter > 0 {
-        print $"($resources)\nWaiting for remaining (ansi yellow_bold)($counter)(ansi reset) managed resources to be (ansi yellow_bold)removed(ansi reset)...\n"
+        print $"($resources)\nWaiting for remaining (ansi green_bold)($counter)(ansi reset) managed resources to be (ansi green_bold)removed(ansi reset)...\n"
         sleep 10sec
         $resources = (do $command)
         $counter = ($resources | wc -l | into int)
@@ -470,7 +470,7 @@ def "main apply providerconfig" [
 
 def "wait crossplane" [] {
 
-    print $"(ansi yellow_bold)Waiting for Crossplane providers to be deployed...(ansi reset)"
+    print $"(ansi green_bold)Waiting for Crossplane providers to be deployed...(ansi reset)"
 
     sleep 60sec
 

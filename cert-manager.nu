@@ -1,6 +1,6 @@
 #!/usr/bin/env nu
 
-def apply_certmanager [] {
+def "main apply certmanager" [] {
 
     (
         helm upgrade --install cert-manager cert-manager

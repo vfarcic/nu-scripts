@@ -13,17 +13,17 @@ def --env "main get github" [] {
     }
     $"export GITHUB_TOKEN=($github_token)\n" | save --append .env
 
-    mut github_user = ""
-    if "GITHUB_USER" in $env {
-        $github_user = $env.GITHUB_USER
+    mut github_org = ""
+    if "GITHUB_ORG" in $env {
+        $github_org = $env.GITHUB_ORG
     } else if "REGISTRY_USER" in $env {
-        $github_user = $env.GITHUB_USER
+        $github_org = $env.REGISTRY_USER
     } else {
         let value = input $"(ansi green_bold)Enter GitHub user or organization where you forked the repo:(ansi reset) "
-        $github_user = $value
+        $github_org = $value
     }
-    $"export GITHUB_USER=($github_user)\n" | save --append .env
+    $"export GITHUB_ORG=($github_org)\n" | save --append .env
 
-    {user: $github_user, token: $github_token}
+    {org: $github_org, token: $github_token}
 
 }
