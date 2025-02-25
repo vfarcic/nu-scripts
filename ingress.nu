@@ -3,10 +3,10 @@
 # Applies Ingress
 #
 # Examples:
-# > main apply ingress "contour" --hyperscaler aws
+# > main apply ingress "contour" --provider aws
 def --env "main apply ingress" [
     class = "traefik" # The class of Ingress controller to apply. Available options: traefik, contour, nginx
-    --hyperscaler = "none"
+    --provider = "none"
     --env_prefix = ""
 ] {
 
@@ -28,7 +28,7 @@ def --env "main apply ingress" [
     
     } else if $class == "nginx" {
 
-        if $hyperscaler == "kind" {
+        if $provider == "kind" {
 
             (
                 kubectl apply
@@ -66,13 +66,13 @@ def --env "main apply ingress" [
 
     }
 
-    main get ingress $class --hyperscaler $hyperscaler --env_prefix $env_prefix
+    main get ingress $class --provider $provider --env_prefix $env_prefix
 
 }
 
 def "main get ingress" [
     class = "traefik" # The class of Ingress controller to apply. Available options: traefik, contour, nginx
-    --hyperscaler: string
+    --provider: string
     --env_prefix = ""
 ] {
 
@@ -84,7 +84,7 @@ def "main get ingress" [
     
     mut ingress_ip = ""
   
-    if $hyperscaler == "aws" {
+    if $provider == "aws" {
 
         sleep 30sec
 
@@ -103,7 +103,7 @@ def "main get ingress" [
 
         $ingress_ip = $ingress_ip | lines | first
 
-    } else if $hyperscaler == "kind" {
+    } else if $provider == "kind" {
 
         $ingress_ip = "127.0.0.1"
 
