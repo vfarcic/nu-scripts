@@ -84,7 +84,7 @@ def "main get ingress" [
     
     mut ingress_ip = ""
   
-    if $provider == "aws" {
+    if $provider == "aws" or $provider == "upcloud" {
 
         sleep 30sec
 

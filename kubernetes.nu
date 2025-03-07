@@ -81,8 +81,9 @@ Press (ansi yellow_bold)any key(ansi reset) to continue.
 
         (
             upctl kubernetes create --name $name --zone us-nyc1
-                --node-group $"count=($min_nodes),name=main,plan=($vm_size)"
-                --network dot --kubernetes-api-allow-ip 
+                --node-group $"count=($min_nodes),name=dot,plan=($vm_size)"
+                --plan dev-md  --network $name --version "1.30"
+                --kubernetes-api-allow-ip "0.0.0.0/0"
         )
 
         (
@@ -193,7 +194,7 @@ def "main destroy kubernetes" [
 
         upctl kubernetes delete $name
 
-        # FIXME: Sleep for 60 seconds?
+        skeep 60sec
 
         upctl network delete $name
 
