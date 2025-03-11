@@ -25,25 +25,15 @@ def "main apply external_secrets" [
         {
             apiVersion: "external-secrets.io/v1beta1"
             kind: "ClusterSecretStore"
-            metadata: {
-                name: "google"
-            }
-            spec: {
-                provider: {
-                    gcpsm: {
-                        auth: {
-                            secretRef: {
-                                secretAccessKeySecretRef: {
-                                    name: "gcp-creds"
-                                    key: "creds"
-                                    namespace: "crossplane-system"
-                                }
-                            }
-                        }
-                        projectID: $google_project_id
-                    }
-                }
-            }
+            metadata: { name: "google" }
+            spec: { provider: { gcpsm: {
+                auth: { secretRef: { secretAccessKeySecretRef: {
+                    name: "gcp-creds"
+                    key: "creds"
+                    namespace: "crossplane-system"
+                } } }
+                projectID: $google_project_id
+            } } }
         } | to yaml | kubectl apply --filename -
 
         start $"https://console.developers.google.com/apis/api/secretmanager.googleapis.com/overview?project=($google_project_id)"
@@ -75,17 +65,11 @@ Press the (ansi yellow_bold)enter key(ansi reset) to continue.
         {
             apiVersion: "external-secrets.io/v1beta1"
             kind: "ClusterSecretStore"
-            metadata: {
-                name: "azure"
-            }
-            spec: {
-                provider: {
-                    azurekv: {
-                        authType: "ManagedIdentity"
-                        vaultUrl: $"https://($azure_key_vault_name).vault.azure.net"
-                    }
-                }
-            }
+            metadata: { name: "azure" }
+            spec: { provider: { azurekv: {
+                authType: "ManagedIdentity"
+                vaultUrl: $"https://($azure_key_vault_name).vault.azure.net"
+            } } }
         } | to yaml | kubectl apply --filename -
 
     } else if $provider == "aws" {
@@ -93,29 +77,24 @@ Press the (ansi yellow_bold)enter key(ansi reset) to continue.
         {
             apiVersion: "external-secrets.io/v1beta1"
             kind: "ClusterSecretStore"
-            metadata:
-              name: "aws"
+            metadata: { name: "aws" }
             spec: {
-                provider: {
-                    aws: {
-                        service: "SecretsManager"
-                        region: "us-east-1"
-                        auth: {
-                            secretRef: {
-                                accessKeyIDSecretRef: {
-                                    name: "aws-creds"
-                                    key: "accessKeyID"
-                                    namespace: "crossplane-system"
-                                }
-                                secretAccessKeySecretRef: {
-                                    name: "aws-creds"
-                                    key: "secretAccessKey"
-                                    namespace: "crossplane-system"
-                                }
-                            }
+                provider: { aws: {
+                    service: "SecretsManager"
+                    region: "us-east-1"
+                    auth: { secretRef: {
+                        accessKeyIDSecretRef: {
+                            name: "aws-creds"
+                            key: "accessKeyID"
+                            namespace: "crossplane-system"
                         }
-                    }
-                }
+                        secretAccessKeySecretRef: {
+                            name: "aws-creds"
+                            key: "secretAccessKey"
+                            namespace: "crossplane-system"
+                        }
+                    } }
+                } }
             }
         } | to yaml | kubectl apply --filename -
 
