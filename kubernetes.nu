@@ -74,22 +74,30 @@ Press (ansi yellow_bold)any key(ansi reset) to continue.
             $vm_size = "8xCPU-32GB"
         }
 
+        print $"Creating (ansi yellow_bold)network(ansi reset)..."
+
         do --ignore-errors {(
             upctl network create --name $name --zone us-nyc1
                 --ip-network address="10.0.1.0/24,dhcp=true"
         )}
 
+        print $"Creating (ansi yellow_bold)Kubernetes(ansi reset) cluster..."
+
         (
             upctl kubernetes create --name $name --zone us-nyc1
                 --node-group $"count=($min_nodes),name=dot,plan=($vm_size)"
                 --plan dev-md  --network $name --version "1.30"
-                --kubernetes-api-allow-ip "0.0.0.0/0"
+                --kubernetes-api-allow-ip "0.0.0.0/0" --wait
         )
+
+        print $"Getting (ansi yellow_bold)kubeconfig(ansi reset)..."
 
         (
             upctl kubernetes config $name --output yaml
                 --write $env.KUBECONFIG
         )
+
+        sleep 60sec
 
     } else if $provider == "kind" {
 
@@ -192,9 +200,13 @@ def "main destroy kubernetes" [
 
     } else if $provider == "upcloud" {
 
+        print $"Deleting (ansi yellow_bold)Kubernetes(ansi reset)..."
+
         upctl kubernetes delete $name
 
-        skeep 60sec
+        sleep 300sec
+
+        print $"Deleting (ansi yellow_bold)network(ansi reset)..."
 
         upctl network delete $name
 

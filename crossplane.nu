@@ -234,7 +234,7 @@ Press any key to continue.
             apiVersion: "pkg.crossplane.io/v1"
             kind: "Configuration"
             metadata: { name: "crossplane-sql" }
-            spec: { package: "xpkg.upbound.io/devops-toolkit/dot-sql:v1.1.20" }
+            spec: { package: "xpkg.upbound.io/devops-toolkit/dot-sql:v1.1.21" }
         } | to yaml | kubectl apply --filename -
 
     }
@@ -418,13 +418,13 @@ def "main delete crossplane" [
     }
 
     mut resources = (do $command)
-    mut counter = ($resources | wc -l | into int)
+    mut counter = ($resources | wc -l | into int) + 1
 
     while $counter > 0 {
         print $"($resources)\nWaiting for remaining (ansi green_bold)($counter)(ansi reset) managed resources to be (ansi green_bold)removed(ansi reset)...\n"
         sleep 10sec
         $resources = (do $command)
-        $counter = ($resources | wc -l | into int)
+        $counter = ($resources | wc -l | into int) + 1
     }
 
 }
