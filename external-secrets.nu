@@ -1,10 +1,12 @@
 #!/usr/bin/env nu
 
 def "main apply external_secrets" [
-    provider: string               # Supported values: `google`, `azure`
+    --provider: string               # Supported values: `google`, `azure`
     --google_project_id: string    # Used only if `provider` is `google`
     --azure_key_vault_name: string # Used only if `provider` is `azure`
 ] {
+
+    print $"Installing (ansi yellow_bold)External Secrets Operator \(ESO\)(ansi reset)..."
 
     (
         helm repo add external-secrets
