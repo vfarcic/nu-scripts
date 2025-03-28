@@ -20,19 +20,25 @@ def --env "main apply crossplane" [
 
     helm repo update
 
-    mut chart = "crossplane"
-    mut devel = ""
     if $preview {
-        $chart = "crossplane-preview"
-        $devel = "--devel"
-    }
 
-    (
-        helm upgrade --install crossplane $"($chart)/crossplane"
-            --namespace crossplane-system --create-namespace
-            --set args='{"--enable-usages"}'
-            --wait $devel
-    )
+        (
+            helm upgrade --install crossplane "crossplane-preview/crossplane"
+                --namespace crossplane-system --create-namespace
+                --set args='{"--enable-usages"}'
+                --wait --devel
+        )
+    
+    } else {
+
+        (
+            helm upgrade --install crossplane "crossplane/crossplane"
+                --namespace crossplane-system --create-namespace
+                --set args='{"--enable-usages"}'
+                --wait
+        )
+
+    }
 
     mut provider_data = {}
     if $provider == "google" {
@@ -47,7 +53,7 @@ def --env "main apply crossplane" [
 
     if $app {
 
-        print $"(ansi yellow_bold)Applying `dot-application` Configuration...(ansi reset)"
+        print $"\n(ansi yellow_bold)Applying `dot-application` Configuration...(ansi reset)\n"
 
         {
             apiVersion: "pkg.crossplane.io/v1"
@@ -100,16 +106,13 @@ def --env "main apply crossplane" [
 
     if $db {
 
-        print $"(ansi yellow_bold)Applying `dot-sql` Configuration...(ansi reset)"
+        print $"\n(ansi yellow_bold)Applying `dot-sql` Configuration...(ansi reset)\n"
 
         if $provider == "google" {
             
             start $"https://console.cloud.google.com/marketplace/product/google/sqladmin.googleapis.com?project=($provider_data.project_id)"
             
-            print $"
-(ansi yellow_bold)ENABLE(ansi reset) the API.
-Press any key to continue.
-"
+            print $"\n(ansi yellow_bold)ENABLE(ansi reset) the API.\nPress any key to continue.\n"
             input
 
         }
@@ -125,7 +128,7 @@ Press any key to continue.
 
     if $github {
 
-        print $"(ansi yellow_bold)Applying `dot-github` Configuration...(ansi reset)"
+        print $"\n(ansi yellow_bold)Applying `dot-github` Configuration...(ansi reset)\n"
 
         {
             apiVersion: "pkg.crossplane.io/v1"
@@ -293,7 +296,7 @@ def "main delete crossplane" [
         kubectl --namespace $namespace delete $kind $name
     }
 
-    print $"Waiting for (ansi yellow_bold)Crossplane managed resources(ansi reset) to be deleted..."
+    print $"\nWaiting for (ansi yellow_bold)Crossplane managed resources(ansi reset) to be deleted...\n"
     
     mut command = { kubectl get managed --output name }
     if ($name | is-not-empty) {
@@ -401,7 +404,7 @@ def "apply providerconfig" [
 
 def "wait crossplane" [] {
 
-    print $"(ansi yellow_bold)Waiting for Crossplane providers to be deployed...(ansi reset)"
+    print $"\n(ansi yellow_bold)Waiting for Crossplane providers to be deployed...(ansi reset)\n"
 
     sleep 60sec
 
