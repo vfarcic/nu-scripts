@@ -513,17 +513,17 @@ aws_secret_access_key = ($aws_secret_access_key)
             --patch '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
     )
 
-    # (
-    #     eksctl utils associate-iam-oidc-provider --cluster $name
-    #         --region $region --approve
-    # )
+    (
+        eksctl utils associate-iam-oidc-provider --cluster $name
+            --region $region --approve
+    )
 
-    # let oidc_provider = (
-    #     aws eks describe-cluster --name $name --region $region
-    #         --query "cluster.identity.oidc.issuer"
-    #         --output text | str replace "https://" ""
-    # )
-    # $"export OIDC_PROVIDER=($oidc_provider)\n"
-    #     | save --append .env
+    let oidc_provider = (
+        aws eks describe-cluster --name $name --region $region
+            --query "cluster.identity.oidc.issuer"
+            --output text | str replace "https://" ""
+    )
+    $"export OIDC_PROVIDER=($oidc_provider)\n"
+        | save --append .env
 
 }
