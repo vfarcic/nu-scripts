@@ -456,7 +456,7 @@ def --env "create eks" [
 
     let aws_account_id = (
         aws sts get-caller-identity --query "Account" 
-        --output text
+            --output text
     )
     $"export AWS_ACCOUNT_ID=($aws_account_id)\n"
         | save --append .env
