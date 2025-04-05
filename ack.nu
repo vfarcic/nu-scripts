@@ -1,6 +1,8 @@
 #!/usr/bin/env nu
 
 def --env "main apply ack" [
+    --cluster_name = "dot"
+    --region = "us-east-1"
 ] {
 
     print $"\nApplying (ansi yellow_bold)ACK Controllers(ansi reset)...\n"
@@ -41,7 +43,8 @@ def --env "main apply ack" [
         $oidc_provider = $env.OIDC_PROVIDER
     } else {
         $oidc_provider = (
-            aws eks describe-cluster --name $name --region $region
+            aws eks describe-cluster --name $cluster_name
+                --region $region
                 --query "cluster.identity.oidc.issuer"
                 --output text | str replace "https://" ""
         )
@@ -88,5 +91,48 @@ def --env "main apply ack" [
         )
 
     }
+
+}
+
+def --env "main delete ack" [
+    # --cluster_name = "dot"
+    # --region = "us-east-1"
+] {
+
+    let controllers = [
+        "ec2",
+        "rds"
+    ]
+    for controller in $controllers {
+
+        let ack_controller_iam_role = $"ack-($controller)-controller"
+
+        let base_url = $"https://raw.githubusercontent.com/aws-controllers-k8s/($controller)-controller/main"
+
+        let policy_arn_url = $"($base_url)/config/iam/recommended-policy-arn"
+
+        let policy_arns = get policy_arns
+
+        for policy_arn in $policy_arns {(
+            aws iam detach-role-policy
+                --role-name ($ack_controller_iam_role)
+                --policy-arn ($policy_arn)
+        )}
+
+        aws iam delete-role --role-name $ack_controller_iam_role
+
+    }
+
+}
+
+def get policy_arns [
+    --controller = "ec2"
+] {
+    
+    let base_url = $"https://raw.githubusercontent.com/aws-controllers-k8s/($controller)-controller/main"
+
+    let policy_arn_url = $"($base_url)/config/iam/recommended-policy-arn"
+
+    http get $policy_arn_url | lines
 
 }
