@@ -1,5 +1,9 @@
 #!/usr/bin/env nu
 
+# Retrieves GitHub credentials (token and organization/username)
+#
+# Returns:
+# A record with org and token fields, and saves values to .env file
 def --env "main get github" [] {
 
     mut github_token = ""

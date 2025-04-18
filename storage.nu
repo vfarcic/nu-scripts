@@ -1,5 +1,9 @@
 #!/usr/bin/env nu
 
+# Creates cloud storage resources based on the specified provider
+#
+# Returns:
+# A record with the storage bucket name
 def create_storage [provider: string, auth = true] {
 
     let bucket = $"dot-(date now | format date "%Y%m%d%H%M%S")"
@@ -135,6 +139,7 @@ AZURE_CLOUD_NAME=AzurePublicCloud" | save azure-creds.env --force
 
 }
 
+# Destroys cloud storage resources created for the specified provider
 def destroy_storage [provider: string, storage_name: string, delete_project = true] {
 
     if $provider == "aws" {

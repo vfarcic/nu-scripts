@@ -1,5 +1,9 @@
 #!/usr/bin/env nu
 
+# Prompts user to select a cloud provider from available options
+#
+# Returns:
+# The selected provider name and saves it to .env file
 def "main get provider" [
     --providers = [aws azure google kind upcloud]
 ] {
@@ -18,6 +22,7 @@ Please send an email to (ansi yellow_bold)viktor@farcic.com(ansi reset) if you'd
     $provider
 }
 
+# Prints a reminder to source the environment variables
 def "main print source" [] {
 
     print $"
@@ -26,6 +31,7 @@ Execute `(ansi yellow_bold)source .env(ansi reset)` to load the environment vari
 
 }
 
+# Removes temporary files created during script execution
 def "main delete temp_files" [] {
 
     rm --force .env
@@ -34,6 +40,11 @@ def "main delete temp_files" [] {
 
 }
 
+# Retrieves and configures credentials for the specified cloud provider
+#
+# Examples:
+# > main get creds aws
+# > main get creds azure
 def --env "main get creds" [
     provider: string,
 ] {

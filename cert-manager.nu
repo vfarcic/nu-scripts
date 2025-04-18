@@ -1,5 +1,6 @@
 #!/usr/bin/env nu
 
+# Installs cert-manager for managing TLS certificates in Kubernetes
 def "main apply certmanager" [] {
 
     (

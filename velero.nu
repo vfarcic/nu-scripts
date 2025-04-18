@@ -1,5 +1,6 @@
 #!/usr/bin/env nu
 
+# Installs Velero backup and restore solution for Kubernetes with provider-specific configuration
 def apply_velero [provider: string, storage_name: string] {
 
     if $provider == "aws" {

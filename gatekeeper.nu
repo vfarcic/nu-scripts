@@ -1,5 +1,6 @@
 #!/usr/bin/env nu
 
+# Installs Gatekeeper (Open Policy Agent) for Kubernetes policy enforcement
 def "main apply opa" [] {
 
     (

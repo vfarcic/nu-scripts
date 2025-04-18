@@ -1,5 +1,10 @@
 #!/usr/bin/env nu
 
+# Creates a Kubernetes cluster with the specified provider
+#
+# Examples:
+# > main create kubernetes aws --name my-cluster --min_nodes 3 --max_nodes 5
+# > main create kubernetes kind --name test-cluster
 def --env "main create kubernetes" [
     provider: string,
     --name = "dot",
@@ -149,6 +154,11 @@ nodeRegistration:
 
 }
 
+# Destroys a Kubernetes cluster created with the specified provider
+#
+# Examples:
+# > main destroy kubernetes aws --name my-cluster
+# > main destroy kubernetes google --name test-cluster --delete_project false
 def "main destroy kubernetes" [
     provider: string
     --name = "dot"
@@ -228,6 +238,10 @@ def "main destroy kubernetes" [
 
 }
 
+# Creates Kubernetes credentials in a kubeconfig file
+#
+# Examples:
+# > main create kubernetes_creds --source_kuberconfig kubeconfig.yaml --destination_kuberconfig new-kubeconfig.yaml
 def "main create kubernetes_creds" [
     --source_kuberconfig = "kubeconfig.yaml"
     --destination_kuberconfig = "kubeconfig_new.yaml"

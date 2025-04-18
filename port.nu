@@ -1,5 +1,9 @@
 #!/usr/bin/env nu
 
+# Installs Port.io for software catalog management
+#
+# Examples:
+# > main apply port myuser my-repo
 def "main apply port" [
     github_user: string
     github_repo: string
@@ -53,6 +57,7 @@ Press any key to continue.
 
 }
 
+# Guides cleanup of Port.io resources
 def "main delete port" [] {
 
     print $"

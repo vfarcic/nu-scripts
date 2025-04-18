@@ -1,5 +1,10 @@
 #!/usr/bin/env nu
 
+# Installs External Secrets Operator (ESO) with optional cloud provider configuration
+#
+# Examples:
+# > main apply external_secrets --provider google --google_project_id my-project
+# > main apply external_secrets --provider azure --azure_key_vault_name my-vault
 def "main apply external_secrets" [
     --provider: string               # Supported values: `google`, `azure`
     --google_project_id: string    # Used only if `provider` is `google`

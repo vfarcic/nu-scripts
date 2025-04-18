@@ -1,5 +1,6 @@
 #!/usr/bin/env nu
 
+# Installs Cloud-Native PostgreSQL (CNPG) operator
 def "main apply cnpg" [] {
 
      print $"\nInstalling (ansi yellow_bold)Cloud-Native PostgreSQL \(CNPG\)(ansi reset)...\n"

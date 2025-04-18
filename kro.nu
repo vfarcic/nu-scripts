@@ -1,6 +1,6 @@
 #!/usr/bin/env nu
 
-
+# Installs Kro (Kubernetes Resource Orchestrator) for orchestrating Kubernetes resources
 def "main apply kro" [] {
 
     (

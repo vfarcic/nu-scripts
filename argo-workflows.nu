@@ -1,5 +1,9 @@
 #!/usr/bin/env nu
 
+# Installs Argo Workflows with container registry credentials
+#
+# Examples:
+# > main apply argoworkflows my-user my-password user@example.com --registry ghcr.io
 def "main apply argoworkflows" [
     registry_user: string     # Container image registry user
     registry_password: string # Container image registry password

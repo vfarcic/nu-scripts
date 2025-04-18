@@ -1,5 +1,9 @@
 #!/usr/bin/env nu
 
+# Installs and configures AWS Controllers for Kubernetes (ACK)
+#
+# Examples:
+# > main apply ack --cluster_name my-cluster --region us-west-2
 def --env "main apply ack" [
     --cluster_name = "dot"
     --region = "us-east-1"
@@ -128,6 +132,7 @@ def --env "main apply ack" [
 
 }
 
+# Removes AWS Controllers for Kubernetes (ACK) and deletes associated IAM roles
 def --env "main delete ack" [] {
 
     let controllers = [

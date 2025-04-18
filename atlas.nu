@@ -1,5 +1,6 @@
 #!/usr/bin/env nu
 
+# Installs the Atlas Operator for database schema migrations
 def "main apply atlas" [] {
 
     print $"\nInstalling (ansi yellow_bold)Atlas Operator(ansi reset)...\n"

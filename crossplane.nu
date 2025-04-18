@@ -1,5 +1,11 @@
 #!/usr/bin/env nu
 
+# Installs and configures Crossplane with optional cloud provider setup
+#
+# Examples:
+# > main apply crossplane --provider aws
+# > main apply crossplane --provider google --app
+# > main apply crossplane --provider azure --db --github --github_user user --github_token token
 def --env "main apply crossplane" [
     --provider = none,      # Which provider to use. Available options are `none`, `google`, `aws`, and `azure`
     --app = false,          # Whether to apply DOT App Configuration
@@ -286,6 +292,11 @@ def --env "main apply crossplane" [
 
 }
 
+# Deletes Crossplane resources and waits for managed resources to be cleaned up
+#
+# Examples:
+# > main delete crossplane
+# > main delete crossplane --kind AppClaim --name myapp --namespace default
 def "main delete crossplane" [
     --kind: string,
     --name: string,
@@ -402,6 +413,7 @@ def "apply providerconfig" [
 
 }
 
+# Waits for all Crossplane providers to be deployed and healthy
 def "main wait crossplane" [] {
 
     print $"\n(ansi yellow_bold)Waiting for Crossplane providers to be deployed...(ansi reset)\n"

@@ -1,5 +1,9 @@
 #!/usr/bin/env nu
 
+# Installs ArgoCD with optional ingress and applications setup
+#
+# Examples:
+# > main apply argocd --host_name argocd.example.com --ingress_class_name nginx
 def "main apply argocd" [
     --host_name = "",
     --apply_apps = true,

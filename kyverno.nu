@@ -1,5 +1,6 @@
 #!/usr/bin/env nu
 
+# Installs Kyverno policy engine for Kubernetes
 def "main apply kyverno" [] {
 
     helm repo add kyverno https://kyverno.github.io/kyverno

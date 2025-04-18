@@ -1,5 +1,6 @@
 #!/usr/bin/env nu
 
+# Configures a Backstage instance with Crossplane integration
 def --env "main configure backstage" [] {
 
     rm --force --recursive backstage
@@ -141,6 +142,7 @@ backend.start();`
 
 }
 
+# Builds and publishes a Backstage Docker image and Helm chart
 def --env "main build backstage" [
     tag: string
     --image = "ghcr.io/vfarcic/idp-full-backstage"
@@ -205,6 +207,7 @@ Press the (ansi yellow_bold)enter key(ansi reset) to continue.
 
 }
 
+# Deploys Backstage to Kubernetes with necessary configuration
 def --env "main apply backstage" [
     tag: string                                   # Available versions can be seen at https://github.com/users/vfarcic/packages/container/idp-full-backstage%2Fbackstage/versions
     --kubeconfig = "kubeconfig-dot.yaml"
