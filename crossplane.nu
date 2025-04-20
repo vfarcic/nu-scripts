@@ -123,11 +123,16 @@ def --env "main apply crossplane" [
 
         }
 
+        mut dot_sql_version = "v2.1.8"
+        if not $preview {
+            $dot_sql_version = "v1.1.21"
+        }
+
         {
             apiVersion: "pkg.crossplane.io/v1"
             kind: "Configuration"
             metadata: { name: "crossplane-sql" }
-            spec: { package: "xpkg.upbound.io/devops-toolkit/dot-sql:v1.1.21" }
+            spec: { package: $"xpkg.upbound.io/devops-toolkit/dot-sql:($dot_sql_version)" }
         } | to yaml | kubectl apply --filename -
 
     }
@@ -244,10 +249,15 @@ def --env "main apply crossplane" [
 
     if $db and $provider != "none" {
 
-        (
+        if $provider == "google" {
+            (
+                apply providerconfig $provider
+                    --google_project_id $provider_data.project_id
+            )
+        } else {
             apply providerconfig $provider
-                --google_project_id $provider_data.project_id
-        )
+        }
+
 
     }
 
