@@ -7,6 +7,7 @@
 def --env "main apply ack" [
     --cluster_name = "dot"
     --region = "us-east-1"
+    --apply_irsa = true
 ] {
 
     print $"\nApplying (ansi yellow_bold)ACK Controllers(ansi reset)...\n"
@@ -70,63 +71,67 @@ def --env "main apply ack" [
                 --set aws.region=us-east-1
         )
 
-        {
-            Version: "2012-10-17",
-            Statement: [
-                {
-                    Effect: "Allow",
-                    Principal: {
-                        Federated: $"arn:aws:iam::($aws_account_id):oidc-provider/($oidc_provider)"
-                    },
-                    "Action": "sts:AssumeRoleWithWebIdentity",
-                    "Condition": {
-                        "StringEquals": {
-                            $"($oidc_provider):sub": $"system:serviceaccount:ack-system:($ack_controller_iam_role)"
+        if $apply_irsa {
+
+            {
+                Version: "2012-10-17",
+                Statement: [
+                    {
+                        Effect: "Allow",
+                        Principal: {
+                            Federated: $"arn:aws:iam::($aws_account_id):oidc-provider/($oidc_provider)"
+                        },
+                        "Action": "sts:AssumeRoleWithWebIdentity",
+                        "Condition": {
+                            "StringEquals": {
+                                $"($oidc_provider):sub": $"system:serviceaccount:ack-system:($ack_controller_iam_role)"
+                            }
                         }
                     }
-                }
-            ]
-        } | to json | save trust.json --force
+                ]
+            } | to json | save trust.json --force
 
-        do --ignore-errors {(
-            aws iam create-role
-                --role-name $ack_controller_iam_role
-                --assume-role-policy-document file://trust.json
-                --description $"IRSA role for ACK ($controller.name) controller deployment on EKS cluster using Helm charts"
-        )}
+            do --ignore-errors {(
+                aws iam create-role
+                    --role-name $ack_controller_iam_role
+                    --assume-role-policy-document file://trust.json
+                    --description $"IRSA role for ACK ($controller.name) controller deployment on EKS cluster using Helm charts"
+            )}
 
-        let policy_arns = (
-            get policy_arns --controller $controller.name
-        )
+            let policy_arns = (
+                get policy_arns --controller $controller.name
+            )
 
-        for policy_arn in $policy_arns {(
-            aws iam attach-role-policy
-                --role-name $ack_controller_iam_role
-                --policy-arn $policy_arn
-        )}
+            for policy_arn in $policy_arns {(
+                aws iam attach-role-policy
+                    --role-name $ack_controller_iam_role
+                    --policy-arn $policy_arn
+            )}
 
-        let role_arn = (
-            aws iam get-role --role-name $ack_controller_iam_role
-                --query Role.Arn --output text
-        )
+            let role_arn = (
+                aws iam get-role --role-name $ack_controller_iam_role
+                    --query Role.Arn --output text
+            )
 
-        (
-            kubectl --namespace ack-system
-                annotate serviceaccount $ack_controller_iam_role
-                $"eks.amazonaws.com/role-arn=($role_arn)"
-        )
+            (
+                kubectl --namespace ack-system
+                    annotate serviceaccount $ack_controller_iam_role
+                    $"eks.amazonaws.com/role-arn=($role_arn)"
+            )
 
-        (
-            kubectl --namespace ack-system
-                rollout restart deployment
-                $"($ack_controller_iam_role)-($controller.name)-chart"
-        )
+            (
+                kubectl --namespace ack-system
+                    rollout restart deployment
+                    $"($ack_controller_iam_role)-($controller.name)-chart"
+            )
 
-        (
-            kubectl --namespace ack-system wait
-                --for=condition=ready pods
-                --selector $"app.kubernetes.io/instance=($ack_controller_iam_role)"
-        )
+            (
+                kubectl --namespace ack-system wait
+                    --for=condition=ready pods
+                    --selector $"app.kubernetes.io/instance=($ack_controller_iam_role)"
+            )
+
+        }
 
     }
 
