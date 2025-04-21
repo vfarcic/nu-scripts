@@ -153,6 +153,23 @@ def --env "main apply crossplane" [
     if $db or $github {
 
         {
+            apiVersion: "rbac.authorization.k8s.io/v1"
+            kind: "ClusterRole"
+            metadata: {
+                name: "crossplane-all"
+                labels: {
+                    "rbac.crossplane.io/aggregate-to-crossplane": "true"
+                }
+            }
+            rules: [{
+                apiGroups: ["*"]
+                resources: ["*"]
+                verbs: ["*"]
+            }]
+        } | to yaml | kubectl apply --filename -
+    
+
+        {
             apiVersion: "v1"
             kind: "ServiceAccount"
             metadata: {
