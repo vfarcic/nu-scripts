@@ -4,7 +4,7 @@
 def "main apply kro" [] {
 
     (
-        helm upgrade --install kro oci://public.ecr.aws/kro/kro
+        helm upgrade --install kro oci://ghcr.io/kro-run/kro/kro
             --namespace kro --create-namespace
     )
 
