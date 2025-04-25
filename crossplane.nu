@@ -358,6 +358,50 @@ def "main delete crossplane" [
 
 }
 
+def "main publish crossplane" [
+    package: string
+    --sources = ["compositions"]
+    --version = ""
+] {
+
+    mut version = $version
+    if $version == "" {
+        $version = $env.VERSION
+    }
+
+    package generate --sources $sources
+
+    crossplane xpkg login --token $env.UP_TOKEN
+
+    (
+        crossplane xpkg build --package-root package
+            --package-file $"($package).xpkg"
+    )
+
+    (
+        crossplane xpkg push --package-files $"($package).xpkg"
+            $"xpkg.upbound.io/($env.UP_ACCOUNT)/dot-($package):($version)"
+    )
+
+    rm --force $"package/($package).xpkg"
+
+    open config.yaml
+        | upsert spec.package $"xpkg.upbound.io/devops-toolkit/dot-($package):($version)"
+        | save config.yaml --force
+
+}
+
+def "package generate" [
+    --sources = ["compositions"]
+] {
+
+    for source in $sources {
+        kcl run $"kcl/($source).k" |
+            save $"package/($source).yaml" --force
+    }
+
+}
+
 def "apply providerconfig" [
     provider: string,
     --google_project_id: string,
