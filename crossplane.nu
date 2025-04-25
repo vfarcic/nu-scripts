@@ -61,11 +61,16 @@ def --env "main apply crossplane" [
 
         print $"\n(ansi yellow_bold)Applying `dot-application` Configuration...(ansi reset)\n"
 
+        mut version = "v2.0.2"
+        if not $preview {
+            $version = "v0.7.41"
+        }
+
         {
             apiVersion: "pkg.crossplane.io/v1"
             kind: "Configuration"
             metadata: { name: "crossplane-app" }
-            spec: { package: "xpkg.upbound.io/devops-toolkit/dot-application:v0.7.30" }
+            spec: { package: $"xpkg.upbound.io/devops-toolkit/dot-application:($version)" }
         } | to yaml | kubectl apply --filename -
 
         if $policies {
@@ -123,16 +128,16 @@ def --env "main apply crossplane" [
 
         }
 
-        mut dot_sql_version = "v2.1.8"
+        mut version = "v2.1.10"
         if not $preview {
-            $dot_sql_version = "v1.1.21"
+            $version = "v1.1.21"
         }
 
         {
             apiVersion: "pkg.crossplane.io/v1"
             kind: "Configuration"
             metadata: { name: "crossplane-sql" }
-            spec: { package: $"xpkg.upbound.io/devops-toolkit/dot-sql:($dot_sql_version)" }
+            spec: { package: $"xpkg.upbound.io/devops-toolkit/dot-sql:($version)" }
         } | to yaml | kubectl apply --filename -
 
     }
