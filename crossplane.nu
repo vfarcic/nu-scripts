@@ -210,7 +210,7 @@ def --env "main apply crossplane" [
                     serviceAccountName: "crossplane-provider-helm"
                 } }
             } } }
-        }
+        } | to yaml | kubectl apply --filename -
 
         {
             apiVersion: "pkg.crossplane.io/v1"
@@ -258,7 +258,7 @@ def --env "main apply crossplane" [
                     serviceAccountName: "crossplane-provider-kubernetes"
                 } }
             } } }
-        }
+        } | to yaml | kubectl apply --filename -
 
         {
             apiVersion: "pkg.crossplane.io/v1"
@@ -268,13 +268,6 @@ def --env "main apply crossplane" [
                 package: "xpkg.upbound.io/crossplane-contrib/provider-kubernetes:v0.15.0"
                 runtimeConfigRef: { name: "crossplane-provider-kubernetes" }
             }
-        } | to yaml | kubectl apply --filename -
-
-        {
-            apiVersion: "kubernetes.crossplane.io/v1alpha1"
-            kind: "ProviderConfig"
-            metadata: { name: "default" }
-            spec: { credentials: { source: "InjectedIdentity" } }
         } | to yaml | kubectl apply --filename -
 
     }
