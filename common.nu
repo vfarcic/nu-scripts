@@ -5,7 +5,7 @@
 # Returns:
 # The selected provider name and saves it to .env file
 def "main get provider" [
-    --providers = [aws azure google kind upcloud]
+    --providers = [aws azure google kind upcloud]  # List of cloud providers to choose from
 ] {
 
     let message = $"
@@ -46,7 +46,7 @@ def "main delete temp_files" [] {
 # > main get creds aws
 # > main get creds azure
 def --env "main get creds" [
-    provider: string,
+    provider: string,  # The cloud provider to configure credentials for (aws, azure, google)
 ] {
 
     mut creds = {provider: $provider}
