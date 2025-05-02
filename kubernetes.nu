@@ -6,13 +6,13 @@
 # > main create kubernetes aws --name my-cluster --min_nodes 3 --max_nodes 5
 # > main create kubernetes kind --name test-cluster
 def --env "main create kubernetes" [
-    provider: string,
-    --name = "dot",
-    --min_nodes = 2,
-    --max_nodes = 4,
+    provider: string  # The Kubernetes provider to use (aws, azure, google, upcloud, kind)
+    --name = "dot"  # Name of the Kubernetes cluster
+    --min_nodes = 2  # Minimum number of nodes in the cluster
+    --max_nodes = 4  # Maximum number of nodes in the cluster
     --node_size = "small" # Supported values: small, medium, large
-    --auth = true
-    --enable_ingress = true
+    --auth = true  # Whether to perform authentication with the cloud provider
+    --enable_ingress = true  # Whether to enable ingress for the kind provider
 ] {
 
     $env.KUBECONFIG = $"($env.PWD)/kubeconfig-($name).yaml"
@@ -43,68 +43,10 @@ def --env "main create kubernetes" [
 
     } else if $provider == "upcloud" {
 
-    print $"
-Visit https://signup.upcloud.com/?promo=devops50 to (ansi yellow_bold)sign up(ansi reset) and get $50+ credits.
-Make sure that (ansi yellow_bold)Allow API connections from all networks(ansi reset) is checked inside the https://hub.upcloud.com/account/overview page.
-Install `(ansi yellow_bold)upctl(ansi reset)` from https://upcloudltd.github.io/upcloud-cli if you do not have it already.
-Press (ansi yellow_bold)any key(ansi reset) to continue.
-"
-        input
-
-        mut upcloud_username = ""
-        if UPCLOUD_USERNAME in $env {
-            $upcloud_username = $env.UPCLOUD_USERNAME
-        } else {
-            $upcloud_username = input $"(ansi green_bold)Enter UpCloud username: (ansi reset)"
-            $env.UPCLOUD_USERNAME = $upcloud_username
-        }
-        $"export UPCLOUD_USERNAME=($upcloud_username)\n"
-            | save --append .env
-    
-        mut upcloud_password = ""
-        if UPCLOUD_PASSWORD in $env {
-            $upcloud_password = $env.UPCLOUD_PASSWORD
-        } else {
-            $upcloud_password = input $"(ansi green_bold)Enter UpCloud password: (ansi reset)" --suppress-output
-            $env.UPCLOUD_PASSWORD = $upcloud_password
-        }
-        $"export UPCLOUD_PASSWORD=($upcloud_password)\n"
-            | save --append .env
-        print ""
-
-        mut vm_size = "2xCPU-4GB"
-        if $node_size == "medium" {
-            $vm_size = "4xCPU-8GB"
-        } else if $node_size == "large" {
-            $vm_size = "8xCPU-32GB"
-        }
-
-        print $"Creating (ansi yellow_bold)network(ansi reset)..."
-
-        do --ignore-errors {(
-            upctl network create --name $name --zone us-nyc1
-                --ip-network address="10.0.1.0/24,dhcp=true"
-        )}
-
-        print $"Creating (ansi yellow_bold)Kubernetes(ansi reset) cluster..."
-
         (
-            upctl kubernetes create --name $name --zone us-nyc1
-                --node-group $"count=($min_nodes),name=dot,plan=($vm_size)"
-                --plan dev-md  --network $name --version "1.30"
-                --kubernetes-api-allow-ip "0.0.0.0/0" --wait
+            create upcloud --name $name --node_size $node_size
+                --min_nodes $min_nodes --max_nodes $max_nodes
         )
-
-        print $"Getting (ansi yellow_bold)kubeconfig(ansi reset)..."
-
-        (
-            upctl kubernetes config $name --output yaml
-                --write $env.KUBECONFIG
-        )
-
-        print $"Waiting for (ansi yellow_bold)5 minutes(ansi reset) to fully set up the cluster..."
-
-        sleep 300sec
 
     } else if $provider == "kind" {
 
@@ -154,15 +96,36 @@ nodeRegistration:
 
 }
 
+# Lists the required packages for Kubernetes functionality
+#
+# Examples:
+# > main packages kubernetes
+def "main packages kubernetes" [] {
+
+    print $"(ansi yellow_bold)Following Nix packages are required(ansi reset):
+* kind
+* kubectl
+* awscli2
+* eksctl
+* google-cloud-sdk
+* azure-cli
+"
+
+print $"(ansi yellow_bold)Following tools not available as Nix packages are required(ansi reset):
+* upctl
+"
+
+}
+
 # Destroys a Kubernetes cluster created with the specified provider
 #
 # Examples:
 # > main destroy kubernetes aws --name my-cluster
 # > main destroy kubernetes google --name test-cluster --delete_project false
 def "main destroy kubernetes" [
-    provider: string
-    --name = "dot"
-    --delete_project = true
+    provider: string  # The Kubernetes provider to delete (aws, azure, google, upcloud, kind)
+    --name = "dot"  # Name of the Kubernetes cluster to destroy
+    --delete_project = true  # Whether to delete the associated cloud project
 ] {
 
     if $provider == "google" {
@@ -243,8 +206,8 @@ def "main destroy kubernetes" [
 # Examples:
 # > main create kubernetes_creds --source_kuberconfig kubeconfig.yaml --destination_kuberconfig new-kubeconfig.yaml
 def "main create kubernetes_creds" [
-    --source_kuberconfig = "kubeconfig.yaml"
-    --destination_kuberconfig = "kubeconfig_new.yaml"
+    --source_kuberconfig = "kubeconfig.yaml"  # Path to the source kubeconfig file
+    --destination_kuberconfig = "kubeconfig_new.yaml"  # Path to the destination kubeconfig file
 ] {
 
     {
@@ -335,12 +298,92 @@ def "main create kubernetes_creds" [
 
 }
 
-def --env "create aks" [
-    --name = "dot",
-    --min_nodes = 2,
-    --max_nodes = 4,
+# Creates a UpCloud Kubernetes cluster
+#
+# Examples:
+# > create upcloud --name my-cluster --node_size medium --min_nodes 3 --max_nodes 5
+def --env "create upcloud" [
+    --name = "dot"  # Name of the Kubernetes cluster
     --node_size = "small" # Supported values: small, medium, large
-    --auth = true
+    --min_nodes = 2  # Minimum number of nodes in the cluster
+    --max_nodes = 4  # Maximum number of nodes in the cluster
+] {
+
+print $"
+Visit https://signup.upcloud.com/?promo=devops50 to (ansi yellow_bold)sign up(ansi reset) and get $50+ credits.
+Make sure that (ansi yellow_bold)Allow API connections from all networks(ansi reset) is checked inside the https://hub.upcloud.com/account/overview page.
+Install `(ansi yellow_bold)upctl(ansi reset)` from https://upcloudltd.github.io/upcloud-cli if you do not have it already.
+Press (ansi yellow_bold)any key(ansi reset) to continue.
+"
+        input
+
+        mut upcloud_username = ""
+        if UPCLOUD_USERNAME in $env {
+            $upcloud_username = $env.UPCLOUD_USERNAME
+        } else {
+            $upcloud_username = input $"(ansi green_bold)Enter UpCloud username: (ansi reset)"
+            $env.UPCLOUD_USERNAME = $upcloud_username
+        }
+        $"export UPCLOUD_USERNAME=($upcloud_username)\n"
+            | save --append .env
+    
+        mut upcloud_password = ""
+        if UPCLOUD_PASSWORD in $env {
+            $upcloud_password = $env.UPCLOUD_PASSWORD
+        } else {
+            $upcloud_password = input $"(ansi green_bold)Enter UpCloud password: (ansi reset)" --suppress-output
+            $env.UPCLOUD_PASSWORD = $upcloud_password
+        }
+        $"export UPCLOUD_PASSWORD=($upcloud_password)\n"
+            | save --append .env
+        print ""
+
+        mut vm_size = "2xCPU-4GB"
+        if $node_size == "medium" {
+            $vm_size = "4xCPU-8GB"
+        } else if $node_size == "large" {
+            $vm_size = "8xCPU-32GB"
+        }
+
+        print $"Creating (ansi yellow_bold)network(ansi reset)..."
+
+        do --ignore-errors {(
+            upctl network create --name $name --zone us-nyc1
+                --ip-network address="10.0.1.0/24,dhcp=true"
+        )}
+
+        print $"Creating (ansi yellow_bold)Kubernetes(ansi reset) cluster..."
+
+        (
+            upctl kubernetes create --name $name --zone us-nyc1
+                --node-group $"count=($min_nodes),name=dot,plan=($vm_size)"
+                --plan dev-md  --network $name --version "1.30"
+                --kubernetes-api-allow-ip "0.0.0.0/0" --wait
+        )
+
+        print $"Getting (ansi yellow_bold)kubeconfig(ansi reset)..."
+
+        (
+            upctl kubernetes config $name --output yaml
+                --write $env.KUBECONFIG
+        )
+
+        print $"Waiting for (ansi yellow_bold)5 minutes(ansi reset) to fully set up the cluster..."
+
+        sleep 300sec
+
+}
+
+# Creates an Azure Kubernetes Service (AKS) cluster
+#
+# Examples:
+# > create aks --name my-cluster --node_size medium --min_nodes 3 --max_nodes 5
+def --env "create aks" [
+    --name = "dot",  # Name of the Kubernetes cluster
+    --min_nodes = 2,  # Minimum number of nodes in the cluster
+    --max_nodes = 4,  # Maximum number of nodes in the cluster
+    --node_size = "small" # Supported values: small, medium, large
+    --auth = true  # Whether to perform authentication with Azure
 ] {
 
     mut tenant_id = ""
@@ -388,12 +431,16 @@ def --env "create aks" [
 
 }
 
+# Creates a Google Kubernetes Engine (GKE) cluster
+#
+# Examples:
+# > create gke --name my-cluster --node_size medium --min_nodes 3 --max_nodes 5 --auth true
 def --env "create gke" [
-    --name = "dot",
-    --min_nodes = 2,
-    --max_nodes = 4,
+    --name = "dot",  # Name of the Kubernetes cluster
+    --min_nodes = 2,  # Minimum number of nodes in the cluster
+    --max_nodes = 4,  # Maximum number of nodes in the cluster
     --node_size = "small" # Supported values: small, medium, large
-    --auth = true
+    --auth = true  # Whether to perform authentication with Google Cloud
 ] {
 
     if $auth {
@@ -441,10 +488,14 @@ def --env "create gke" [
 
 }
 
+# Creates an Amazon Elastic Kubernetes Service (EKS) cluster
+#
+# Examples:
+# > create eks --name my-cluster --node_size medium --min_nodes 3 --max_nodes 5
 def --env "create eks" [
-    --name = "dot",
-    --min_nodes = 2,
-    --max_nodes = 4,
+    --name = "dot",  # Name of the Kubernetes cluster
+    --min_nodes = 2,  # Minimum number of nodes in the cluster
+    --max_nodes = 4,  # Maximum number of nodes in the cluster
     --node_size = "small" # Supported values: small, medium, large
 ] {
 

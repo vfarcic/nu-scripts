@@ -1,5 +1,6 @@
 {
   "packages": [
-    "nushell@0.103.0"
+    "nushell@0.103.0",
+    "git@2.48.1"
   ]
 }
