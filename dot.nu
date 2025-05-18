@@ -23,6 +23,7 @@ source prometheus.nu
 source registry.nu
 source storage.nu
 source velero.nu
+source mcp.nu
 
 def main [] {}
 
