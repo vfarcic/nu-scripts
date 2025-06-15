@@ -10,7 +10,7 @@
 # > main apply mcp --enable-playwright
 #
 def --env "main apply mcp" [
-    --location: list<string> = [".cursor/mcp.json", ".roo/mcp.json"], # Path(s) where the MCP servers configuration file will be created.
+    --location: list<string> = [".cursor/mcp.json", ".roo/mcp.json", ".vscode/mcp.json"], # Path(s) where the MCP servers configuration file will be created.
     --memory-file-path: string = "",         # Path to the memory file for the memory MCP server. If empty, defaults to an absolute path for 'memory.json' in CWD.
     --anthropic-api-key: string = "",        # Anthropic API key for the taskmaster-ai MCP server. If empty, $env.ANTHROPIC_API_KEY is used if set.
     --github-token: string = "",             # GitHub Personal Access Token for the github MCP server. If empty, $env.GITHUB_TOKEN is used if set.
