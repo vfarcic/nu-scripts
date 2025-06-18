@@ -5,9 +5,9 @@
 # Examples:
 # > main apply argocd --host_name argocd.example.com --ingress_class_name nginx
 def "main apply argocd" [
-    --host_name = "",
-    --apply_apps = true,
-    --ingress_class_name = "traefik"
+    --host-name = "",
+    --apply-apps = true,
+    --ingress-class-name = "traefik"
 ] {
 
     let git_url = git config --get remote.origin.url
