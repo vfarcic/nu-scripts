@@ -8,11 +8,11 @@
 def --env "main create kubernetes" [
     provider: string  # The Kubernetes provider to use (aws, azure, google, upcloud, kind)
     --name = "dot"  # Name of the Kubernetes cluster
-    --min_nodes = 2  # Minimum number of nodes in the cluster
-    --max_nodes = 4  # Maximum number of nodes in the cluster
-    --node_size = "small" # Supported values: small, medium, large
+    --min-nodes = 2  # Minimum number of nodes in the cluster
+    --max-nodes = 4  # Maximum number of nodes in the cluster
+    --node-size = "small" # Supported values: small, medium, large
     --auth = true  # Whether to perform authentication with the cloud provider
-    --enable_ingress = true  # Whether to enable ingress for the kind provider
+    --enable-ingress = true  # Whether to enable ingress for the kind provider
 ] {
 
     $env.KUBECONFIG = $"($env.PWD)/kubeconfig-($name).yaml"
