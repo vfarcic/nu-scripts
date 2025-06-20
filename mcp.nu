@@ -65,17 +65,9 @@ def --env "main apply mcp" [
 
     if $resolved_github_token != "" {
         $mcp_servers_map = $mcp_servers_map | upsert "github" {
-            command: "docker",
-            args: [
-                "run",
-                "-i",
-                "--rm",
-                "-e",
-                "GITHUB_PERSONAL_ACCESS_TOKEN",
-                "ghcr.io/github/github-mcp-server"
-            ],
-            env: {
-                GITHUB_PERSONAL_ACCESS_TOKEN: $resolved_github_token
+            url: "https://api.githubcopilot.com/mcp/",
+            headers: {
+                Authorization: $"Bearer ($resolved_github_token)"
             }
         }
     }
