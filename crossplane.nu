@@ -5,17 +5,18 @@
 # Examples:
 # > main apply crossplane --provider aws
 # > main apply crossplane --provider google --app
-# > main apply crossplane --provider azure --db --github --github_user user --github_token token
+# > main apply crossplane --provider azure --db-config --github-config --github-user user --github-token token
 def --env "main apply crossplane" [
-    --provider = none,      # Which provider to use. Available options are `none`, `google`, `aws`, and `azure`
-    --app = false,          # Whether to apply DOT App Configuration
-    --db = false,           # Whether to apply DOT SQL Configuration
-    --github = false,       # Whether to apply DOT GitHub Configuration
-    --github_user: string,  # GitHub user required for the DOT GitHub Configuration and optinal for the DOT App Configuration
-    --github_token: string, # GitHub token required for the DOT GitHub Configuration and optinal for the DOT App Configuration
-    --policies = false      # Whether to create Validating ADmission Policies
-    --skip_login = false    # Whether to skip the login (only for Azure)
-    --preview = false       # Whether to use the preview version of Crossplane
+    --provider = none,       # Which provider to use. Available options are `none`, `google`, `aws`, and `azure`
+    --app-config = false,    # Whether to apply DOT App Configuration
+    --db-config = false,     # Whether to apply DOT SQL Configuration
+    --github-config = false, # Whether to apply DOT GitHub Configuration
+    --github-user: string,   # GitHub user required for the DOT GitHub Configuration and optinal for the DOT App Configuration
+    --github-token: string,  # GitHub token required for the DOT GitHub Configuration and optinal for the DOT App Configuration
+    --policies = false,      # Whether to create Validating Admission Policies
+    --skip-login = false,    # Whether to skip the login (only for Azure)
+    --preview = false        # Whether to use the preview version of Crossplane
+    --db-provider = false    # Whether to apply database provider (not needed if --db-config is `true`)
 ] {
 
     print $"\nInstalling (ansi yellow_bold)Crossplane(ansi reset)...\n"
@@ -52,12 +53,12 @@ def --env "main apply crossplane" [
     } else if $provider == "aws" {
         setup aws
     } else if $provider == "azure" {
-        setup azure --skip_login $skip_login
+        setup azure --skip-login $skip_login
     } else if $provider == "upcloud" {
         setup upcloud
     }
 
-    if $app {
+    if $app_config {
 
         print $"\n(ansi yellow_bold)Applying `dot-application` Configuration...(ansi reset)\n"
 
@@ -115,9 +116,7 @@ def --env "main apply crossplane" [
 
     }
 
-    if $db {
-
-        print $"\n(ansi yellow_bold)Applying `dot-sql` Configuration...(ansi reset)\n"
+    if $db_config or $db_provider {
 
         if $provider == "google" {
             
@@ -128,21 +127,31 @@ def --env "main apply crossplane" [
 
         }
 
-        mut version = "v2.1.10"
-        if not $preview {
-            $version = "v1.1.21"
+        if $db_config {
+
+            print $"\n(ansi yellow_bold)Applying `dot-sql` Configuration...(ansi reset)\n"
+
+            mut version = "v2.1.10"
+            if not $preview {
+                $version = "v1.1.21"
+            }
+
+            {
+                apiVersion: "pkg.crossplane.io/v1"
+                kind: "Configuration"
+                metadata: { name: "crossplane-sql" }
+                spec: { package: $"xpkg.upbound.io/devops-toolkit/dot-sql:($version)" }
+            } | to yaml | kubectl apply --filename -
+
         }
 
-        {
-            apiVersion: "pkg.crossplane.io/v1"
-            kind: "Configuration"
-            metadata: { name: "crossplane-sql" }
-            spec: { package: $"xpkg.upbound.io/devops-toolkit/dot-sql:($version)" }
-        } | to yaml | kubectl apply --filename -
+    } else if $db_provider {
 
+        apply db-provider $provider
+        
     }
 
-    if $github {
+    if $github_config {
 
         print $"\n(ansi yellow_bold)Applying `dot-github` Configuration...(ansi reset)\n"
 
@@ -155,7 +164,7 @@ def --env "main apply crossplane" [
 
     }
 
-    if $db or $github {
+    if $db_config or $github_config {
 
         {
             apiVersion: "rbac.authorization.k8s.io/v1"
@@ -272,14 +281,16 @@ def --env "main apply crossplane" [
 
     }
 
-    main wait crossplane
+    if $db_config or $app_config or $github_config or $db_provider {
+        wait crossplane
+    }
 
-    if $db and $provider != "none" {
+    if ($db_config and $provider != "none") or $db_provider {
 
         if $provider == "google" {
             (
                 apply providerconfig $provider
-                    --google_project_id $provider_data.project_id
+                    --google-project-id $provider_data.project_id
             )
         } else {
             apply providerconfig $provider
@@ -303,7 +314,7 @@ def --env "main apply crossplane" [
             }
         } | to yaml | kubectl apply --filename -
 
-        if $app or $github {
+        if $app_config or $github_config {
 
             {
                 apiVersion: "github.upbound.io/v1beta1",
@@ -414,7 +425,7 @@ def "package generate" [
 
 def "apply providerconfig" [
     provider: string,
-    --google_project_id: string,
+    --google-project-id: string,
 ] {
 
     if $provider == "google" {
@@ -494,8 +505,50 @@ def "apply providerconfig" [
 
 }
 
+def "apply db-provider" [
+    provider: string
+] {
+
+    if $provider == "google" {
+
+        {
+            apiVersion: "pkg.crossplane.io/v1"
+            kind: "Provider"
+            metadata: { name: "provider-gcp-sql" }
+            spec: { package: "xpkg.crossplane.io/crossplane-contrib/provider-gcp-sql:v1.14.0" }
+        } | to yaml | kubectl apply --filename -
+
+    } else if $provider == "aws" {
+
+        {
+            apiVersion: "pkg.crossplane.io/v1"
+            kind: "Provider"
+            metadata: { name: "provider-aws-rds" }
+            spec: { package: "xpkg.crossplane.io/crossplane-contrib/provider-aws-rds:v1.23.1" }
+        } | to yaml | kubectl apply --filename -
+
+        {
+            apiVersion: "pkg.crossplane.io/v1"
+            kind: "Provider"
+            metadata: { name: "provider-aws-ec2" }
+            spec: { package: "xpkg.crossplane.io/crossplane-contrib/provider-aws-ec2:v1.23.1" }
+        } | to yaml | kubectl apply --filename -
+
+    } else if $provider == "azure" {
+
+        {
+            apiVersion: "pkg.crossplane.io/v1"
+            kind: "Provider"
+            metadata: { name: "provider-azure-dbforpostgresql" }
+            spec: { package: "xpkg.crossplane.io/crossplane-contrib/provider-azure-dbforpostgresql:v1.13.0" }
+        } | to yaml | kubectl apply --filename -
+
+    }
+}
+
+
 # Waits for all Crossplane providers to be deployed and healthy
-def "main wait crossplane" [] {
+def "wait crossplane" [] {
 
     print $"\n(ansi yellow_bold)Waiting for Crossplane providers to be deployed...(ansi reset)\n"
 
@@ -604,7 +657,7 @@ aws_secret_access_key = ($env.AWS_SECRET_ACCESS_KEY)
 }
 
 def "setup azure" [
-    --skip_login = false
+    --skip-login = false
 ] {
 
     print $"\nInstalling (ansi yellow_bold)Crossplane Azure Provider(ansi reset)...\n"
