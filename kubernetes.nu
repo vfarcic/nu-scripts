@@ -461,7 +461,7 @@ def --env "create gke" [
 
         print $"
     (ansi yellow_bold)ENABLE(ansi reset) the API.
-    Press (ansi yellow_bold)any key(ansi reset) to continue.
+    Press the (ansi yellow_bold)enter key(ansi reset) to continue.
     "
         input
     }
