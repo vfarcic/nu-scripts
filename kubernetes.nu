@@ -313,7 +313,7 @@ print $"
 Visit https://signup.upcloud.com/?promo=devops50 to (ansi yellow_bold)sign up(ansi reset) and get $50+ credits.
 Make sure that (ansi yellow_bold)Allow API connections from all networks(ansi reset) is checked inside the https://hub.upcloud.com/account/overview page.
 Install `(ansi yellow_bold)upctl(ansi reset)` from https://upcloudltd.github.io/upcloud-cli if you do not have it already.
-Press (ansi yellow_bold)any key(ansi reset) to continue.
+Press the (ansi yellow_bold)enter key(ansi reset) to continue.
 "
         input
 
