@@ -520,14 +520,14 @@ def "apply db-provider" [
             apiVersion: "pkg.crossplane.io/v1"
             kind: "Provider"
             metadata: { name: "provider-aws-rds" }
-            spec: { package: "xpkg.crossplane.io/crossplane-contrib/provider-aws-rds:v1.23.1" }
+            spec: { package: "xpkg.crossplane.io/crossplane-contrib/provider-aws-rds:v1.23.0" }
         } | to yaml | kubectl apply --filename -
 
         {
             apiVersion: "pkg.crossplane.io/v1"
             kind: "Provider"
             metadata: { name: "provider-aws-ec2" }
-            spec: { package: "xpkg.crossplane.io/crossplane-contrib/provider-aws-ec2:v1.23.1" }
+            spec: { package: "xpkg.crossplane.io/crossplane-contrib/provider-aws-ec2:v1.23.0" }
         } | to yaml | kubectl apply --filename -
 
     } else if $provider == "azure" {
