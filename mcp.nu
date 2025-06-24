@@ -8,13 +8,15 @@
 # > main apply mcp --location [ my-custom-path.json, another-path.json ]
 # > main apply mcp --memory-file-path /custom/memory.json --anthropic-api-key XYZ --github-token ABC
 # > main apply mcp --enable-playwright
+# > main apply mcp --enable-context7
 #
 def --env "main apply mcp" [
-    --location: list<string> = [".cursor/mcp.json", ".roo/mcp.json", ".vscode/mcp.json"], # Path(s) where the MCP servers configuration file will be created.
+    --location: list<string> = ["mcp.json"], # Path(s) where the MCP servers configuration file will be created (e.g., `".cursor/mcp.json", ".roo/mcp.json", ".vscode/mcp.json", "mcp.json"`)
     --memory-file-path: string = "",         # Path to the memory file for the memory MCP server. If empty, defaults to an absolute path for 'memory.json' in CWD.
     --anthropic-api-key: string = "",        # Anthropic API key for the taskmaster-ai MCP server. If empty, $env.ANTHROPIC_API_KEY is used if set.
     --github-token: string = "",             # GitHub Personal Access Token for the github MCP server. If empty, $env.GITHUB_TOKEN is used if set.
-    --enable-playwright = false              # Enable Playwright MCP server for browser automation
+    --enable-playwright = false,             # Enable Playwright MCP server for browser automation
+    --enable-context7 = false                # Enable Context7 MCP server
 ] {
     let resolved_memory_file_path = if $memory_file_path == "" {
         (pwd) | path join "memory.json" | path expand
@@ -48,9 +50,11 @@ def --env "main apply mcp" [
         }
     }
 
-    $mcp_servers_map = $mcp_servers_map | upsert "context7" {
-        command: "npx",
-        args: ["-y", "@upstash/context7-mcp"]
+    if $enable_context7 {
+        $mcp_servers_map = $mcp_servers_map | upsert "context7" {
+            command: "npx",
+            args: ["-y", "@upstash/context7-mcp"]
+        }
     }
 
     if $resolved_anthropic_api_key != "" {
