@@ -115,7 +115,7 @@ def --env "main apply mcp" [
     if $enable_dot_ai and $resolved_anthropic_api_key != "" and $resolved_kubeconfig != "" {
         $mcp_servers_map = $mcp_servers_map | upsert "dot-ai" {
             command: "npx",
-            args: ["dot-ai-mcp"],
+            args: ["-y", "--package=@vfarcic/dot-ai", "dot-ai-mcp"],
             env: {
                 ANTHROPIC_API_KEY: $resolved_anthropic_api_key,
                 KUBECONFIG: $resolved_kubeconfig,
