@@ -46,7 +46,7 @@ def --env "main apply crossplane" [
 
         print $"\n(ansi green_bold)Applying `dot-application` Configuration...(ansi reset)\n"
 
-        let version = "v2.0.2"
+        let version = "v3.0.31"
         {
             apiVersion: "pkg.crossplane.io/v1"
             kind: "Configuration"
@@ -109,7 +109,7 @@ def --env "main apply crossplane" [
 
         print $"\n(ansi green_bold)Applying `dot-sql` Configuration...(ansi reset)\n"
 
-        let version = "v2.1.59"
+        let version = "v2.1.68"
         {
             apiVersion: "pkg.crossplane.io/v1"
             kind: "Configuration"
