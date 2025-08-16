@@ -18,6 +18,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Error handling: Check conditions and use `exit 1` with descriptive messages
 - Function naming: Prefix with `main` for primary commands, followed by action
 - Organize related functions within topic-specific scripts (e.g., `kubernetes.nu`)
-- When asked to show or get files, open them in VS Code using `code` command
+- Use full argument names in commands (e.g., `--install` not `-i`, `--namespace` not `-n`)
+- Use parentheses for multi-line helm/kubectl commands
+- Keep installation scripts simple - focus on core functionality
 - Always add latest specific version of devbox packages
 - Always open files you create or edit in VS Code

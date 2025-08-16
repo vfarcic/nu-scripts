@@ -24,6 +24,7 @@ source registry.nu
 source storage.nu
 source velero.nu
 source mcp.nu
+source toolhive.nu
 
 def main [] {}
 
