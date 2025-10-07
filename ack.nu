@@ -7,22 +7,27 @@
 def --env "main apply ack" [
     --cluster_name = "dot"
     --region = "us-east-1"
-    --apply_irsa = true
+    --apply-creds = true
+    --apply-irsa = true
 ] {
 
     print $"\nApplying (ansi yellow_bold)ACK Controllers(ansi reset)...\n"
 
-    if AWS_ACCESS_KEY_ID not-in $env {
-        $env.AWS_ACCESS_KEY_ID = input $"(ansi yellow_bold)Enter AWS Access Key ID: (ansi reset)"
-    }
-    $"export AWS_ACCESS_KEY_ID=($env.AWS_ACCESS_KEY_ID)\n"
-        | save --append .env
+    if $apply_creds {
 
-    if AWS_SECRET_ACCESS_KEY not-in $env {
-        $env.AWS_SECRET_ACCESS_KEY = input $"(ansi yellow_bold)Enter AWS Secret Access Key: (ansi reset)"
+        if AWS_ACCESS_KEY_ID not-in $env {
+            $env.AWS_ACCESS_KEY_ID = input $"(ansi yellow_bold)Enter AWS Access Key ID: (ansi reset)"
+        }
+        $"export AWS_ACCESS_KEY_ID=($env.AWS_ACCESS_KEY_ID)\n"
+            | save --append .env
+
+        if AWS_SECRET_ACCESS_KEY not-in $env {
+            $env.AWS_SECRET_ACCESS_KEY = input $"(ansi yellow_bold)Enter AWS Secret Access Key: (ansi reset)"
+        }
+        $"export AWS_SECRET_ACCESS_KEY=($env.AWS_SECRET_ACCESS_KEY)\n"
+            | save --append .env
+
     }
-    $"export AWS_SECRET_ACCESS_KEY=($env.AWS_SECRET_ACCESS_KEY)\n"
-        | save --append .env
 
     let password = (
         aws ecr-public get-login-password --region us-east-1

@@ -402,8 +402,8 @@ def "apply providerconfig" [
     if $provider == "google" {
 
         {
-            apiVersion: "gcp.upbound.io/v1beta1"
-            kind: "ProviderConfig"
+            apiVersion: "gcp.m.upbound.io/v1beta1"
+            kind: "ClusterProviderConfig"
             metadata: { name: "default" }
             spec: {
                 projectID: $google_project_id
@@ -421,8 +421,8 @@ def "apply providerconfig" [
     } else if $provider == "aws" {
 
         {
-            apiVersion: "aws.upbound.io/v1beta1"
-            kind: "ProviderConfig"
+            apiVersion: "aws.m.upbound.io/v1beta1"
+            kind: "ClusterProviderConfig"
             metadata: { name: default }
             spec: {
                 credentials: {
@@ -439,8 +439,8 @@ def "apply providerconfig" [
     } else if $provider == "azure" {
 
         {
-            apiVersion: "azure.upbound.io/v1beta1"
-            kind: "ProviderConfig"
+            apiVersion: "azure.m.upbound.io/v1beta1"
+            kind: "ClusterProviderConfig"
             metadata: { name: default }
             spec: {
                 credentials: {
