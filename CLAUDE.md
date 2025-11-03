@@ -22,4 +22,3 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Use parentheses for multi-line helm/kubectl commands
 - Keep installation scripts simple - focus on core functionality
 - Always add latest specific version of devbox packages
-- Always open files you create or edit in VS Code
