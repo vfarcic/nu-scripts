@@ -5,7 +5,7 @@
 # Examples:
 # > main apply ingress contour --provider aws
 def --env "main apply ingress" [
-    class = "contour"   # The class of Ingress controller to apply. Available options: traefik, contour, nginx
+    class = "traefik"   # The class of Ingress controller to apply. Available options: traefik, contour, nginx
     --provider = "none" # The cloud provider. Available options: aws, azure, google, upcloud, kind
     --env_prefix = ""   # Prefix to add to environment variables
 ] {
