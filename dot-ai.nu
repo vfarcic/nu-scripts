@@ -12,6 +12,7 @@ def "main apply dot-ai" [
     --provider = "anthropic",
     --model = "claude-haiku-4-5-20251001",
     --ingress-enabled = true,
+    --ingress-class = "nginx",
     --host = "dot-ai.127.0.0.1.nip.io",
     --version = "0.128.0",
     --enable-tracing = false
@@ -50,6 +51,7 @@ def "main apply dot-ai" [
             --set $"ai.provider=($provider)"
             --set $"ai.model=($model)"
             --set $"ingress.enabled=($ingress_enabled)"
+            --set $"ingress.className=($ingress_class)"
             --set $"ingress.host=($host)"
             ...$tracing_flags
             --namespace dot-ai --create-namespace

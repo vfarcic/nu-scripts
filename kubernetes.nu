@@ -544,7 +544,7 @@ aws_secret_access_key = ($aws_secret_access_key)
         metadata: {
             name: $name
             region: $region
-            version: "1.31"
+            version: "1.34"
         }
         managedNodeGroups: [{
             name: "primary"
