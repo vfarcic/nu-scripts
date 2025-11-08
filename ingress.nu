@@ -43,7 +43,7 @@ def --env "main apply ingress" [
                     pods 
                     --selector app.kubernetes.io/name=ingress-nginx
                     --selector app.kubernetes.io/component=controller
-                    --timeout=120s
+                    --timeout=300s
             )
 
         }
