@@ -14,7 +14,7 @@ def "main apply dot-ai" [
     --ingress-enabled = true,
     --ingress-class = "nginx",
     --host = "dot-ai.127.0.0.1.nip.io",
-    --version = "0.128.0",
+    --version = "0.139.0",
     --enable-tracing = false
 ] {
 
