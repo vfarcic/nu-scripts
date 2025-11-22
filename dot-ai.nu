@@ -1,6 +1,6 @@
 #!/usr/bin/env nu
 
-# Installs DevOps AI Toolkit with MCP server support
+# Installs DevOps AI Toolkit with MCP server support and controller
 #
 # Examples:
 # > main apply dot-ai --host dot-ai.127.0.0.1.nip.io
@@ -14,7 +14,8 @@ def "main apply dot-ai" [
     --ingress-enabled = true,
     --ingress-class = "nginx",
     --host = "dot-ai.127.0.0.1.nip.io",
-    --version = "0.139.0",
+    --version = "0.140.0",
+    --controller-version = "0.13.0",
     --enable-tracing = false
 ] {
 
@@ -58,7 +59,15 @@ def "main apply dot-ai" [
             --wait
     )
 
+    (
+        helm upgrade --install dot-ai-controller
+            $"oci://ghcr.io/vfarcic/dot-ai-controller/charts/dot-ai-controller:($controller_version)"
+            --namespace dot-ai --create-namespace
+            --wait
+    )
+
     print $"DevOps AI Toolkit is available at (ansi yellow_bold)http://($host)(ansi reset)"
+    print $"DevOps AI Controller (ansi yellow_bold)($controller_version)(ansi reset) installed in (ansi yellow_bold)dot-ai(ansi reset) namespace"
 
     if $enable_tracing {
         print $"Tracing enabled: Traces will be sent to (ansi yellow_bold)Jaeger in observability namespace(ansi reset)"
