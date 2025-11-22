@@ -15,7 +15,6 @@ def "main apply dot-ai" [
     --ingress-class = "nginx",
     --host = "dot-ai.127.0.0.1.nip.io",
     --version = "0.140.0",
-    --controller-version = "0.13.0",
     --enable-tracing = false
 ] {
 
@@ -55,13 +54,6 @@ def "main apply dot-ai" [
             --set $"ingress.className=($ingress_class)"
             --set $"ingress.host=($host)"
             ...$tracing_flags
-            --namespace dot-ai --create-namespace
-            --wait
-    )
-
-    (
-        helm upgrade --install dot-ai-controller
-            $"oci://ghcr.io/vfarcic/dot-ai-controller/charts/dot-ai-controller:($controller_version)"
             --namespace dot-ai --create-namespace
             --wait
     )
