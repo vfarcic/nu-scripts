@@ -10,7 +10,7 @@ def "main apply argocd" [
     --apply-apps = true,
     --ingress-class-name = "traefik",
     --admin-password = "admin123",
-    --app-namespace = "a-team",
+    --app-namespace = "argocd",
     --tls = false,
     --cluster-issuer = "letsencrypt"
 ] {
@@ -54,7 +54,7 @@ def "main apply argocd" [
     helm repo add argo https://argoproj.github.io/argo-helm
 
     helm repo update
-  
+
     (
         helm upgrade --install argocd argo/argo-cd
             --namespace argocd --create-namespace
@@ -96,7 +96,7 @@ def "main apply argocd" [
     } | save argocd/app.yaml --force
 
     if $apply_apps {
-        
+
         kubectl apply --filename argocd/app.yaml
 
     }
