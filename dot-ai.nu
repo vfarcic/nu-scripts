@@ -16,7 +16,38 @@ def "main apply dot-ai-controller" [
             --wait
     )
 
+    # Create CapabilityScanConfig for autonomous capability discovery
+    "apiVersion: dot-ai.devopstoolkit.live/v1alpha1
+kind: CapabilityScanConfig
+metadata:
+  name: default-scan
+  namespace: dot-ai
+spec:
+  mcp:
+    endpoint: http://dot-ai-mcp.dot-ai.svc.cluster.local:3456/api/v1/tools/manageOrgData
+    authSecretRef:
+      name: dot-ai-secrets
+      key: auth-token
+" | kubectl apply --filename -
+
+    # Create ResourceSyncConfig for semantic search across cluster resources
+    "apiVersion: dot-ai.devopstoolkit.live/v1alpha1
+kind: ResourceSyncConfig
+metadata:
+  name: default-sync
+  namespace: dot-ai
+spec:
+  mcpEndpoint: http://dot-ai-mcp.dot-ai.svc.cluster.local:3456/api/v1/resources/sync
+  mcpAuthSecretRef:
+    name: dot-ai-secrets
+    key: auth-token
+  debounceWindowSeconds: 10
+  resyncIntervalMinutes: 60
+" | kubectl apply --filename -
+
     print $"DevOps AI Controller (ansi yellow_bold)($controller_version)(ansi reset) installed in (ansi yellow_bold)dot-ai(ansi reset) namespace"
+    print $"CapabilityScanConfig created for autonomous capability discovery"
+    print $"ResourceSyncConfig created for semantic search across cluster resources"
 
 }
 
@@ -65,8 +96,7 @@ def "main apply dot-ai" [
         []
     }
 
-    main apply dot-ai-controller --controller-version $controller_version
-
+    # Install MCP first (creates service and secrets needed by controller's CapabilityScanConfig)
     (
         helm upgrade --install dot-ai-mcp
             $"oci://ghcr.io/vfarcic/dot-ai/charts/dot-ai:($version)"
@@ -83,6 +113,9 @@ def "main apply dot-ai" [
             --namespace dot-ai --create-namespace
             --wait
     )
+
+    # Install controller after MCP (CapabilityScanConfig references MCP service and secrets)
+    main apply dot-ai-controller --controller-version $controller_version
 
     print $"DevOps AI Toolkit is available at (ansi yellow_bold)http://($host)(ansi reset)"
 
