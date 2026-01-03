@@ -29,6 +29,7 @@ def "main apply dot-ai-controller" [
 def "main apply dot-ai" [
     --anthropic-api-key = "",
     --openai-api-key = "",
+    --auth-token = "my-secret-token",
     --provider = "anthropic",
     --model = "claude-haiku-4-5-20251001",
     --ingress-enabled = true,
@@ -71,6 +72,7 @@ def "main apply dot-ai" [
             $"oci://ghcr.io/vfarcic/dot-ai/charts/dot-ai:($version)"
             --set $"secrets.anthropic.apiKey=($anthropic_key)"
             --set $"secrets.openai.apiKey=($openai_key)"
+            --set $"secrets.auth.token=($auth_token)"
             --set $"ai.provider=($provider)"
             --set $"ai.model=($model)"
             --set $"ingress.enabled=($ingress_enabled)"
@@ -83,6 +85,9 @@ def "main apply dot-ai" [
     )
 
     print $"DevOps AI Toolkit is available at (ansi yellow_bold)http://($host)(ansi reset)"
+
+    # Update .env with auth token for MCP clients
+    $"DOT_AI_AUTH_TOKEN=($auth_token)\n" | save --force .env
 
     if $enable_tracing {
         print $"Tracing enabled: Traces will be sent to (ansi yellow_bold)Jaeger in observability namespace(ansi reset)"
