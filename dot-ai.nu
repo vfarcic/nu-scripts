@@ -6,7 +6,7 @@
 # > main apply dot-ai-controller
 # > main apply dot-ai-controller --controller-version 0.17.0
 def "main apply dot-ai-controller" [
-    --controller-version = "0.39.0"
+    --controller-version = "0.40.0"
 ] {
 
     (
@@ -66,8 +66,8 @@ def "main apply dot-ai" [
     --ingress-enabled = true,
     --ingress-class = "nginx",
     --host = "dot-ai.127.0.0.1.nip.io",
-    --version = "0.179.0",
-    --controller-version = "0.39.0",
+    --version = "0.185.0",
+    --controller-version = "0.40.0",
     --enable-tracing = false
 ] {
 
