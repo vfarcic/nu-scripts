@@ -9,8 +9,8 @@
 # Examples:
 # > main apply grafana-stack traefik 127.0.0.1.nip.io
 def "main apply grafana-stack" [
-    ingress-class: string, # The Ingress class to use
-    ingress-host: string   # The base hostname for Ingress
+    ingress_class: string, # The Ingress class to use
+    ingress_host: string   # The base hostname for Ingress
 ] {
 
     print $"\nInstalling (ansi yellow_bold)Grafana Stack(ansi reset)...\n"
