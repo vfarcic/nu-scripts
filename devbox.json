@@ -9,7 +9,7 @@
   ],
   "shell": {
     "init_hook": [
-      "export PATH=$PATH:$HOME/.npm-global/bin"
+      "export PATH=\"$HOME/.local/bin:$PATH\""
     ],
     "scripts": {}
   }
