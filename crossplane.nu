@@ -7,15 +7,15 @@
 # > main apply crossplane --provider google --app
 # > main apply crossplane --provider azure --db-config --github-config --github-user user --github-token token
 def --env "main apply crossplane" [
-    --provider = none,       # Which provider to use. Available options are `none`, `google`, `aws`, and `azure`
-    --app-config = false,    # Whether to apply DOT App Configuration
-    --db-config = false,     # Whether to apply DOT SQL Configuration
-    --github-config = false, # Whether to apply DOT GitHub Configuration
-    --github-user: string,   # GitHub user required for the DOT GitHub Configuration and optinal for the DOT App Configuration
-    --github-token: string,  # GitHub token required for the DOT GitHub Configuration and optinal for the DOT App Configuration
-    --policies = false,      # Whether to create Validating Admission Policies
-    --skip-login = false,    # Whether to skip the login (only for Azure)
-    --db-provider = false    # Whether to apply database provider (not needed if --db-config is `true`)
+    --provider = none,            # Which provider to use. Available options are `none`, `google`, `aws`, and `azure`
+    --app-config = false,         # Whether to apply DOT App Configuration
+    --db-config = false,          # Whether to apply DOT SQL Configuration
+    --github-config = false,      # Whether to apply DOT GitHub Configuration
+    --github-user: string,        # GitHub user required for the DOT GitHub Configuration and optinal for the DOT App Configuration
+    --github-token: string,       # GitHub token required for the DOT GitHub Configuration and optinal for the DOT App Configuration
+    --policies = false,           # Whether to create Validating Admission Policies
+    --skip-login = false,         # Whether to skip the login (only for Azure)
+    --db-provider = false         # Whether to apply database provider (not needed if --db-config is `true`)
 ] {
 
     print $"\nInstalling (ansi green_bold)Crossplane(ansi reset)...\n"
@@ -261,11 +261,11 @@ def --env "main apply crossplane" [
 
         if $provider == "google" {
             (
-                apply providerconfig $provider
+                main apply crossplane-providerconfig $provider
                     --google-project-id $provider_data.project_id
             )
         } else {
-            apply providerconfig $provider
+            main apply crossplane-providerconfig $provider
         }
 
 
@@ -309,6 +309,8 @@ def --env "main apply crossplane" [
         }
 
     }
+
+    $provider_data
 
 }
 
@@ -392,7 +394,7 @@ def "package generate" [
 
 }
 
-def "apply providerconfig" [
+def "main apply crossplane-providerconfig" [
     provider: string,
     --google-project-id: string,
 ] {
