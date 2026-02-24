@@ -298,6 +298,30 @@ def "main create kubernetes_creds" [
 
 }
 
+def --env "main get kubeconfig" [
+    provider: string                  # The Kubernetes provider (azure, google, upcloud,)
+    --name = "dot"                    # Name of the Kubernetes cluster
+    --resource_group = ""             # The resource group for Azure clusters
+    --project-id = ""                 # The project ID for Google Cloud clusters
+    --destination = "kubeconfig.yaml" # Path to save the kubeconfig file
+] {
+
+    if $provider == "upcloud" {
+        upctl kubernetes config $name --output yaml --write $env.KUBECONFIG --write $destination
+    } else if $provider == "azure" {
+        az aks get-credentials --resource-group $resource_group --name $name --file $env.KUBECONFIG --file $destination
+    } else if $provider == "google" {
+        $env.KUBECONFIG = $destination
+        gcloud container clusters get-credentials $name --project $project_id --zone us-east1-b
+    } else {
+        print $"(ansi red_bold)($provider)(ansi reset) is not a supported"
+        return
+    }
+
+    print $"Kube config saved to (ansi yellow_bold)($destination)(ansi reset). Execute `(ansi yellow_bold)export KUBECONFIG=($destination)(ansi reset)` to use it in the current shell session."
+
+}
+
 # Creates a UpCloud Kubernetes cluster
 #
 # Examples:
@@ -363,10 +387,7 @@ Press the (ansi yellow_bold)enter key(ansi reset) to continue.
 
         print $"Getting (ansi yellow_bold)kubeconfig(ansi reset)..."
 
-        (
-            upctl kubernetes config $name --output yaml
-                --write $env.KUBECONFIG
-        )
+        main get kubeconfig upcloud --name $name
 
         print $"Waiting for (ansi yellow_bold)5 minutes(ansi reset) to fully set up the cluster..."
 
@@ -424,10 +445,7 @@ def --env "create aks" [
             --enable-cluster-autoscaler --yes
     )
 
-    (
-        az aks get-credentials --resource-group $resource_group
-            --name $name --file $env.KUBECONFIG
-    )
+    main get kubeconfig azure --name $name --resource_group $resource_group
 
 }
 
@@ -485,10 +503,7 @@ def --env "create gke" [
     # Pre-create empty kubeconfig file to prevent gcloud from creating a directory
     touch $env.KUBECONFIG
 
-    (
-        gcloud container clusters get-credentials $name
-            --project $project_id --zone us-east1-b
-    )
+    main get kubeconfig azure --name $name --project-id $project_id
 
 }
 
