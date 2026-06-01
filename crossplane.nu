@@ -10,10 +10,10 @@ def --env "main apply crossplane" [
     --provider = none,            # Which provider to use. Available options are `none`, `google`, `aws`, and `azure`
     --app-config = false,         # Whether to apply DOT App Configuration
     --db-config = false,          # Whether to apply DOT SQL Configuration
-    --kubernetes-config = false,  # Whether to apply Kubernetes provider configuration
     --github-config = false,      # Whether to apply DOT GitHub Configuration
     --github-user: string,        # GitHub user required for the DOT GitHub Configuration and optinal for the DOT App Configuration
     --github-token: string,       # GitHub token required for the DOT GitHub Configuration and optinal for the DOT App Configuration
+    --policies = false,           # Whether to create Validating Admission Policies
     --skip-login = false,         # Whether to skip the login (only for Azure)
     --db-provider = false         # Whether to apply database provider (not needed if --db-config is `true`)
 ] {
@@ -44,7 +44,7 @@ def --env "main apply crossplane" [
 
         print $"\n(ansi green_bold)Applying `dot-application` Configuration...(ansi reset)\n"
 
-        let version = "v4.0.3"
+        let version = "v3.0.46"
         {
             apiVersion: "pkg.crossplane.io/v1"
             kind: "Configuration"
@@ -52,22 +52,53 @@ def --env "main apply crossplane" [
             spec: { package: $"xpkg.upbound.io/devops-toolkit/dot-application:($version)" }
         } | to yaml | kubectl apply --filename -
 
+        if $policies {
+
+            {
+                apiVersion: "admissionregistration.k8s.io/v1"
+                kind: "ValidatingAdmissionPolicy"
+                metadata: { name: "dot-app" }
+                spec: {
+                    failurePolicy: "Fail"
+                    matchConstraints: {
+                        resourceRules: [{
+                            apiGroups:   ["devopstoolkit.live"]
+                            apiVersions: ["*"]
+                            operations:  ["CREATE", "UPDATE"]
+                            resources:   ["appclaims"]
+                        }]
+                    }
+                    validations: [
+                        {
+                            expression: "has(object.spec.parameters.scaling) && has(object.spec.parameters.scaling.enabled) && object.spec.parameters.scaling.enabled"
+                            message: "`spec.parameters.scaling.enabled` must be set to `true`."
+                        }, {
+                            expression: "has(object.spec.parameters.scaling) && object.spec.parameters.scaling.min > 1"
+                            message: "`spec.parameters.scaling.min` must be greater than `1`."
+                        }
+                    ]
+                }
+            } | to yaml | kubectl apply --filename -
+
+            {
+                apiVersion: "admissionregistration.k8s.io/v1"
+                kind: "ValidatingAdmissionPolicyBinding"
+                metadata: { name: "dot-app" }
+                spec: {
+                    policyName: "dot-app"
+                    validationActions: ["Deny"]
+                }
+            } | to yaml | kubectl apply --filename -
+
+        }
+
     }
 
     if ($db_config or $db_provider) and $provider == "google" {
 
         start $"https://console.cloud.google.com/marketplace/product/google/sqladmin.googleapis.com?project=($provider_data.project_id)"
 
-        print $"\n(ansi yellow_bold)ENABLE(ansi reset) the SQL Admin API.\nPress the (ansi yellow_bold)enter key(ansi reset) to continue.\n"
-        input
-
-    }
-
-    if $kubernetes_config and $provider == "google" {
-
-        start $"https://console.cloud.google.com/marketplace/product/google/container.googleapis.com?project=($provider_data.project_id)"
-
-        print $"\n(ansi yellow_bold)ENABLE(ansi reset) the Kubernetes Engine API.\nPress the (ansi yellow_bold)enter key(ansi reset) to continue.\n"
+        print $"\n(ansi yellow_bold)ENABLE(ansi reset) the API.\nPress the (ansi yellow_bold)enter key(ansi reset) to continue.\n"
         input
 
     }
@@ -90,20 +121,6 @@ def --env "main apply crossplane" [
 
     }
 
-    if $kubernetes_config {
-
-        print $"\n(ansi green_bold)Applying `dot-kubernetes` Configuration...(ansi reset)\n"
-
-        let version = "v2.0.17"
-        {
-            apiVersion: "pkg.crossplane.io/v1"
-            kind: "Configuration"
-            metadata: { name: "crossplane-k8s" }
-            spec: { package: $"xpkg.upbound.io/devops-toolkit/dot-kubernetes:($version)" }
-        } | to yaml | kubectl apply --filename -
-
-    }
-
     if $github_config {
 
         print $"\n(ansi green_bold)Applying `dot-github` Configuration...(ansi reset)\n"
@@ -117,7 +134,7 @@ def --env "main apply crossplane" [
 
     }
 
-    if $db_config or $github_config or $app_config or $kubernetes_config {
+    if $db_config or $github_config or $app_config {
 
         print $"\n(ansi green_bold)Applying Kubernetes and Helm providers...(ansi reset)\n"
 
@@ -181,7 +198,7 @@ def --env "main apply crossplane" [
             kind: "Provider"
             metadata: { name: "crossplane-provider-helm" }
             spec: {
-                package: "xpkg.crossplane.io/crossplane-contrib/provider-helm:v1.1.0"
+                package: "xpkg.upbound.io/crossplane-contrib/provider-helm:v1.0.0"
                 runtimeConfigRef: { name: "crossplane-provider-helm" }
             }
         } | to yaml | kubectl apply --filename -
@@ -227,22 +244,20 @@ def --env "main apply crossplane" [
         {
             apiVersion: "pkg.crossplane.io/v1"
             kind: "Provider"
-            metadata: { name: "crossplane-contrib-provider-kubernetes" }
+            metadata: { name: "crossplane-provider-kubernetes" }
             spec: {
-                package: "xpkg.crossplane.io/crossplane-contrib/provider-kubernetes:v1.2.1"
+                package: "xpkg.upbound.io/crossplane-contrib/provider-kubernetes:v1.0.0"
                 runtimeConfigRef: { name: "crossplane-provider-kubernetes" }
             }
         } | to yaml | kubectl apply --filename -
 
     }
 
-    if $db_config or $app_config or $github_config or $kubernetes_config or $db_provider {
+    if $db_config or $app_config or $github_config or $db_provider {
         wait crossplane
     }
 
-    if ($db_config and $provider != "none") or $kubernetes_config or $db_provider {
-
-        print $"\n(ansi green_bold)Applying provider config...(ansi reset)\n"
+    if ($db_config and $provider != "none") or $db_provider {
 
         if $provider == "google" {
             (
@@ -316,21 +331,24 @@ def "main delete crossplane" [
 
     print $"\nWaiting for (ansi green_bold)Crossplane managed resources(ansi reset) to be deleted...\n"
 
-    mut command = { kubectl --namespace $namespace get managed --output name }
+    mut command = { kubectl get managed --output name }
     if ($name | is-not-empty) {
         $command = {
-            kubectl --namespace $namespace get managed --output name --selector $"crossplane.io/composite=($name)"
+            (
+                kubectl get managed --output name
+                    --selector $"crossplane.io/claim-name=($name)"
+            )
         }
     }
 
     mut resources = (do $command)
-    mut counter = ($resources | lines | length)
+    mut counter = ($resources | wc -l | into int)
 
     while $counter > 0 {
         print $"($resources)\nWaiting for remaining (ansi green_bold)($counter)(ansi reset) managed resources to be (ansi green_bold)removed(ansi reset)...\n"
         sleep 10sec
         $resources = (do $command)
-        $counter = ($resources | lines | length)
+        $counter = ($resources | wc -l | into int)
     }
 
 }
@@ -536,11 +554,24 @@ Press the (ansi yellow_bold)enter key(ansi reset) to continue.
             --project $project
     )}
 
-    sleep 5sec
+    mut attempts = 0
+    loop {
+        let result = (
+            gcloud iam service-accounts describe $sa --project $project
+                | complete
+        )
+        if $result.exit_code == 0 { break }
+        if $attempts >= 30 {
+            error make { msg: $"Service account ($sa) did not become available in time" }
+        }
+        print $"Waiting for service account (ansi green_bold)($sa)(ansi reset) to propagate..."
+        sleep 2sec
+        $attempts = $attempts + 1
+    }
 
     (
         gcloud projects add-iam-policy-binding
-            --role roles/admin $project
+            --role roles/owner $project
             --member $"serviceAccount:($sa)"
     )
 
@@ -599,7 +630,7 @@ def "setup azure" [
 
     mut azure_tenant = ""
     if AZURE_TENANT not-in $env {
-        $azure_tenant = (az account show --query tenantId -o tsv)
+        $azure_tenant = input $"(ansi yellow_bold)Enter Azure Tenant: (ansi reset)"
     } else {
         $azure_tenant = $env.AZURE_TENANT
     }
