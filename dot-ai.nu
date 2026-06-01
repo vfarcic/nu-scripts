@@ -5,11 +5,13 @@
 # Examples:
 # > main apply dot-ai --host dot-ai.127.0.0.1.nip.io
 # > main apply dot-ai --provider openai --model gpt-4o
+# > main apply dot-ai --provider google --model gemini-3-pro --google-api-key XYZ
 # > main apply dot-ai --enable-tracing true
 def "main apply dot-ai" [
-    --stack-version = "0.44.0",
+    --stack-version = "0.96.0",
     --anthropic-api-key = "",
     --openai-api-key = "",
+    --google-api-key = "",
     --auth-token = "my-secret-token",
     --provider = "anthropic",
     --model = "claude-haiku-4-5-20251001",
@@ -32,6 +34,12 @@ def "main apply dot-ai" [
         $openai_api_key
     }
 
+    let google_key = if ($google_api_key | is-empty) {
+        $env.GOOGLE_GENERATIVE_AI_API_KEY? | default ""
+    } else {
+        $google_api_key
+    }
+
     let tracing_flags = if $enable_tracing {
         [
             --set 'dot-ai.extraEnv[0].name=OTEL_TRACING_ENABLED'
@@ -50,6 +58,7 @@ def "main apply dot-ai" [
             $"oci://ghcr.io/vfarcic/dot-ai-stack/charts/dot-ai-stack:($stack_version)"
             --set $"dot-ai.secrets.anthropic.apiKey=($anthropic_key)"
             --set $"dot-ai.secrets.openai.apiKey=($openai_key)"
+            --set $"dot-ai.secrets.google.apiKey=($google_key)"
             --set $"dot-ai.secrets.auth.token=($auth_token)"
             --set $"dot-ai.ai.provider=($provider)"
             --set $"dot-ai.ai.model=($model)"
