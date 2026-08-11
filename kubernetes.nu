@@ -13,6 +13,7 @@ def --env "main create kubernetes" [
     --node-size = "small" # Supported values: small, medium, large
     --auth = true  # Whether to perform authentication with the cloud provider
     --enable-ingress = true  # Whether to enable ingress for the kind provider
+    --billing-account = ""  # Billing account to link. Google only. Auto-detected when empty
 ] {
 
     $env.KUBECONFIG = $"($env.PWD)/kubeconfig-($name).yaml"
@@ -23,7 +24,7 @@ def --env "main create kubernetes" [
         (
             create gke --name $name --node_size $node_size
                 --min_nodes $min_nodes --max_nodes $max_nodes
-                --auth $auth
+                --auth $auth --billing_account $billing_account
         )
 
     } else if $provider == "aws" {
@@ -92,6 +93,77 @@ nodeRegistration:
     }
 
     $env.KUBECONFIG
+
+}
+
+# Adds a GPU node pool to an existing Kubernetes cluster
+#
+# The pool is tainted so that only workloads tolerating GPUs land on it. Keep
+# system workloads on the general pool so the GPU pool can be recreated or
+# scaled to zero without taking the rest of the cluster down.
+#
+# Examples:
+# > main create gpu_nodes google --cluster-name dot
+# > main create gpu_nodes google --cluster-name dot --accelerator nvidia-l4 --max-nodes 3
+def --env "main create gpu_nodes" [
+    provider: string  # The Kubernetes provider to use (google, aws, azure)
+    --cluster-name = "dot"  # Name of the Kubernetes cluster to add the pool to
+    --name = "gpu"  # Name of the node pool
+    --machine-type = "g2-standard-8"  # Machine type backing the pool
+    --accelerator = "nvidia-l4"  # Accelerator attached to each node
+    --accelerator-count = 1  # Accelerators per node
+    --num-nodes = 1  # Number of nodes to start with
+    --min-nodes = 0  # Minimum number of nodes. Zero enables scale to zero
+    --max-nodes = 1  # Maximum number of nodes
+    --zone = "us-east1-b"  # Zone the cluster lives in
+    --taint = true  # Whether to taint the pool so only GPU workloads schedule on it
+] {
+
+    if $provider == "google" {
+
+        mut project_id = ""
+        if PROJECT_ID in $env {
+            $project_id = $env.PROJECT_ID
+        } else {
+            $project_id = (gcloud config get-value project | str trim)
+        }
+
+        if $project_id == "" {
+            print $"(ansi red_bold)Could not determine the project(ansi reset). Set PROJECT_ID or run `gcloud config set project`."
+            exit 1
+        }
+
+        mut args = [
+            $name
+            --cluster $cluster_name
+            --project $project_id
+            --zone $zone
+            --machine-type $machine_type
+            --accelerator $"type=($accelerator),count=($accelerator_count),gpu-driver-version=latest"
+            --num-nodes $num_nodes
+            --enable-autoscaling
+            --min-nodes $min_nodes
+            --max-nodes $max_nodes
+            --no-enable-autoupgrade
+        ]
+
+        if $taint {
+            $args = ($args | append [--node-taints $"nvidia.com/gpu=present:NoSchedule"])
+        }
+
+        gcloud container node-pools create ...$args
+
+    } else if $provider in ["aws" "azure"] {
+
+        print $"(ansi red_bold)($provider)(ansi reset) is not implemented yet. Only `google` is supported."
+        exit 1
+
+    } else {
+
+        print $"(ansi red_bold)($provider)(ansi reset) is not supported."
+        exit 1
+
+    }
 
 }
 
@@ -302,6 +374,7 @@ def --env "main get kubeconfig" [
     --name = "dot"                    # Name of the Kubernetes cluster
     --resource_group = ""             # The resource group for Azure clusters
     --project-id = ""                 # The project ID for Google Cloud clusters
+    --zone = "us-east1-b"             # The zone for Google Cloud clusters
     --destination = "kubeconfig.yaml" # Path to save the kubeconfig file
 ] {
 
@@ -313,7 +386,7 @@ def --env "main get kubeconfig" [
         az aks get-credentials --resource-group $resource_group --name $name --file $env.KUBECONFIG --file $destination
     } else if $provider == "google" {
         $env.KUBECONFIG = $destination
-        gcloud container clusters get-credentials $name --project $project_id --region us-east1
+        gcloud container clusters get-credentials $name --project $project_id --zone $zone
     } else {
         print $"(ansi red_bold)($provider)(ansi reset) is not a supported"
         return
@@ -460,6 +533,7 @@ def --env "create gke" [
     --max_nodes = 4,  # Maximum number of nodes in the cluster
     --node_size = "small" # Supported values: small, medium, large
     --auth = true  # Whether to perform authentication with Google Cloud
+    --billing_account = ""  # Billing account to link. Auto-detected when empty
 ] {
 
     if $auth {
@@ -476,13 +550,22 @@ def --env "create gke" [
 
         gcloud projects create $project_id
 
-        start $"https://console.cloud.google.com/marketplace/product/google/container.googleapis.com?project=($project_id)"
+        mut billing = $billing_account
+        if $billing == "" {
+            let accounts = (
+                gcloud billing accounts list --filter "open=true"
+                    --format "value(name)" | lines
+            )
+            if ($accounts | is-empty) {
+                print $"(ansi red_bold)No open billing account found(ansi reset). Pass --billing_account."
+                exit 1
+            }
+            $billing = ($accounts | first)
+        }
 
-        print $"
-    (ansi yellow_bold)ENABLE(ansi reset) the API.
-    Press the (ansi yellow_bold)enter key(ansi reset) to continue.
-    "
-        input
+        gcloud billing projects link $project_id --billing-account $billing
+
+        gcloud services enable container.googleapis.com --project $project_id
     }
 
     mut vm_size = "e2-standard-2"
@@ -504,7 +587,10 @@ def --env "create gke" [
     # Pre-create empty kubeconfig file to prevent gcloud from creating a directory
     touch $env.KUBECONFIG
 
-    main get kubeconfig azure --name $name --project-id $project_id
+    (
+        main get kubeconfig google --name $name --project-id $project_id
+            --destination $env.KUBECONFIG
+    )
 
 }
 
