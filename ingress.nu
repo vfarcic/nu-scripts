@@ -88,12 +88,19 @@ def "main get ingress" [
 
         sleep 30sec
 
-        let ingress_hostname = (
-            kubectl --namespace $class
-                get service $service_name --output yaml
-                | from yaml
-                | get status.loadBalancer.ingress.0.hostname
-        )
+        mut ingress_hostname = ""
+        while $ingress_hostname == "" {
+            print "Waiting for Ingress Service hostname..."
+            sleep 10sec
+            # See the note below about --ignore-errors.
+            $ingress_hostname = (
+                kubectl --namespace $class
+                    get service $service_name --output yaml
+                    | from yaml
+                    | get --ignore-errors status.loadBalancer.ingress.0.hostname
+                    | default ""
+            )
+        }
 
         while $ingress_ip == "" {
             print "Waiting for Ingress Service IP..."
@@ -115,11 +122,15 @@ def "main get ingress" [
 
             sleep 10sec
 
+            # The key is absent until the load balancer is assigned, so this
+            # needs --ignore-errors. Without it `get` throws and the loop that
+            # exists to wait for the address dies on its first iteration.
             $ingress_ip = (
                 kubectl --namespace $class
                     get service $service_name --output yaml
                     | from yaml
-                    | get status.loadBalancer.ingress.0.ip
+                    | get --ignore-errors status.loadBalancer.ingress.0.ip
+                    | default ""
             )
 
         }
